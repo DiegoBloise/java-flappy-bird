@@ -15,8 +15,8 @@ import com.badlogic.gdx.utils.ScreenUtils;
 
 public class Main implements ApplicationListener {
 
-    private final float SCREEN_HEIGHT = 480;
-    private final float SCREEN_WIDTH = 640;
+    private final int SCREEN_HEIGHT = 480;
+    private final int SCREEN_WIDTH = 320;
 
     private final float GRAVITY = 35;
     private final float FLAP_FORCE = 25 * GRAVITY;
@@ -28,9 +28,10 @@ public class Main implements ApplicationListener {
     private float birdPosition;
     private float birdVelocity;
 
-    private final int PIPE_WIDTH = 65;
-    private final int PIPE_HEIGHT = 500;
-    private final int PIPE_GAP = 55;
+    private final int PIPE_WIDTH = 52;
+    private final int PIPE_HEIGHT = SCREEN_HEIGHT;
+    private final int VERTICAL_PIPE_GAP = 55;
+    private final int HORIZONTAL_PIPE_GAP = 150;
 
     private int pipeCount;
 
@@ -85,13 +86,13 @@ public class Main implements ApplicationListener {
             // Top pipe
             shapeRenderer.begin(ShapeType.Filled);
             shapeRenderer.setColor(Color.GREEN);
-            shapeRenderer.rect(pipe.x, pipe.y + PIPE_GAP, PIPE_WIDTH, PIPE_HEIGHT);
+            shapeRenderer.rect(pipe.x, pipe.y + VERTICAL_PIPE_GAP, PIPE_WIDTH, PIPE_HEIGHT);
             shapeRenderer.end();
 
             // Bottom pipe
             shapeRenderer.begin(ShapeType.Filled);
             shapeRenderer.setColor(Color.GREEN);
-            shapeRenderer.rect(pipe.x, pipe.y - PIPE_HEIGHT - PIPE_GAP, PIPE_WIDTH, PIPE_HEIGHT);
+            shapeRenderer.rect(pipe.x, pipe.y - PIPE_HEIGHT - VERTICAL_PIPE_GAP, PIPE_WIDTH, PIPE_HEIGHT);
             shapeRenderer.end();
         }
     }
@@ -125,10 +126,9 @@ public class Main implements ApplicationListener {
         }
 
         // Add new pipes
-        if (pipes.get(pipeCount).x < SCREEN_WIDTH - 180) {
+        if (pipes.get(pipeCount).x < SCREEN_WIDTH - HORIZONTAL_PIPE_GAP) {
             pipeCount++;
             addNewPipe();
-            System.out.println(pipes.size());
         }
 
         // Remove pipes off the screen

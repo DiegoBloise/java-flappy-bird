@@ -82,26 +82,9 @@ public class Main implements ApplicationListener {
 
     @Override
     public void render() {
-        deltaTime = Gdx.graphics.getDeltaTime();
-
-        handleInput();
-        gameLogic();
-        pipesHandler();
-        groundHandler();
-
-        ScreenUtils.clear(Color.valueOf("#0066FF"));
-        viewport.apply();
-        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
-        spriteBatch.begin();
-
-        drawBackground();
-        drawBird();
-        drawPipes();
-        drawGround();
-
-        spriteBatch.end();
-
-        // System.out.println("PIPES rendered: " + pipes.size());
+        input();
+        logic();
+        draw();
     }
 
     @Override
@@ -144,7 +127,7 @@ public class Main implements ApplicationListener {
         }
     }
 
-    private void handleInput() {
+    private void input() {
         float worldHeight = viewport.getWorldHeight();
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             if (birdSprite.getY() < worldHeight - 50 && birdSprite.getY() > 0) {
@@ -156,7 +139,11 @@ public class Main implements ApplicationListener {
         }
     }
 
-    private void gameLogic() {
+    private void logic() {
+        deltaTime = Gdx.graphics.getDeltaTime();
+
+        pipesHandler();
+        groundHandler();
 
         float worldHeight = viewport.getWorldHeight();
         float birdHeight = birdSprite.getHeight();
@@ -169,6 +156,20 @@ public class Main implements ApplicationListener {
         if (birdSprite.getY() < 1) {
             resetGame();
         }
+    }
+
+    private void draw() {
+        ScreenUtils.clear(Color.valueOf("#0066FF"));
+        viewport.apply();
+        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+        spriteBatch.begin();
+
+        drawBackground();
+        drawBird();
+        drawPipes();
+        drawGround();
+
+        spriteBatch.end();
     }
 
     private void pipesHandler() {

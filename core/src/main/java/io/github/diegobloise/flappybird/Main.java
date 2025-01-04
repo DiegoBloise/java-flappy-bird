@@ -11,8 +11,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -40,8 +40,6 @@ public class Main implements ApplicationListener {
     private List<Sprite> pipes;
     private List<Sprite> grounds;
 
-    private ShapeRenderer shapeRenderer;
-
     private Texture backgroundTexture;
     private Texture groundTexture;
     private Texture birdTexture;
@@ -53,10 +51,12 @@ public class Main implements ApplicationListener {
 
     private Sprite birdSprite;
 
+    private Rectangle birdRectangle;
+    private Rectangle pipeRectangle;
+    private Rectangle groundRectangle;
+
     @Override
     public void create() {
-        shapeRenderer = new ShapeRenderer();
-
         backgroundTexture = new Texture("assets/sprites/background-day.png");
         groundTexture = new Texture("assets/sprites/base.png");
         birdTexture = new Texture("assets/sprites/yellowbird-downflap.png");
@@ -69,6 +69,10 @@ public class Main implements ApplicationListener {
 
         spriteBatch = new SpriteBatch();
         viewport = new FitViewport(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+        birdRectangle = new Rectangle();
+        pipeRectangle = new Rectangle();
+        groundRectangle = new Rectangle();
 
         createGround();
 
@@ -97,7 +101,6 @@ public class Main implements ApplicationListener {
 
     @Override
     public void dispose() {
-        shapeRenderer.dispose();
         spriteBatch.dispose();
     }
 
@@ -108,10 +111,6 @@ public class Main implements ApplicationListener {
     }
 
     private void drawBird() {
-        // shapeRenderer.begin(ShapeType.Filled);
-        // shapeRenderer.setColor(Color.RED);
-        // shapeRenderer.circle(birdPositionX, birdPosition, BIRD_RADIUS);
-        // shapeRenderer.end();
         birdSprite.draw(spriteBatch);
     }
 
@@ -129,7 +128,7 @@ public class Main implements ApplicationListener {
 
     private void input() {
         float worldHeight = viewport.getWorldHeight();
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.justTouched()) {
             if (birdSprite.getY() < worldHeight - 50 && birdSprite.getY() > 0) {
                 birdVelocity += FLAP_FORCE;
                 wingSound.play();
@@ -150,12 +149,10 @@ public class Main implements ApplicationListener {
 
         birdVelocity -= GRAVITY;
 
-        birdSprite.setY(birdSprite.getY() + birdVelocity * deltaTime);
+        birdSprite.translateY(birdVelocity * deltaTime);
         birdSprite.setY(MathUtils.clamp(birdSprite.getY(), 0, worldHeight - birdHeight));
 
-        if (birdSprite.getY() < 1) {
-            resetGame();
-        }
+        birdRectangle.set(birdSprite.getX(), birdSprite.getY(), birdSprite.getWidth(), birdSprite.getHeight());
     }
 
     private void draw() {
@@ -176,6 +173,8 @@ public class Main implements ApplicationListener {
         // Move pipes towards player
         for (Sprite pipe : pipes) {
             pipe.translateX(FLY_SPEED * deltaTime);
+            pipeRectangle.set(pipe.getX(), pipe.getY(), pipe.getWidth(), pipe.getHeight());
+            checkCollision(pipeRectangle);
         }
 
         // Add new pipes
@@ -197,6 +196,8 @@ public class Main implements ApplicationListener {
             if (ground.getX() < -groundTexture.getWidth()) {
                 ground.setX(groundTexture.getWidth() - 1);
             }
+            groundRectangle.set(ground.getX(), ground.getY(), ground.getWidth(), ground.getHeight());
+            checkCollision(groundRectangle);
         }
     }
 
@@ -235,5 +236,11 @@ public class Main implements ApplicationListener {
         groundSprite = new Sprite(groundTexture);
         groundSprite.setX(groundTexture.getWidth());
         grounds.add(groundSprite);
+    }
+
+    private void checkCollision(Rectangle rectangle) {
+        if (birdRectangle.overlaps(rectangle)) {
+            resetGame();
+        }
     }
 }

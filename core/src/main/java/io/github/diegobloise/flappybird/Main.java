@@ -61,6 +61,7 @@ public class Main implements ApplicationListener {
         groundTexture = new Texture("assets/sprites/base.png");
         birdTexture = new Texture("assets/sprites/yellowbird-downflap.png");
         pipeTexture = new Texture("assets/sprites/pipe-green.png");
+
         wingSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/wing.wav"));
 
         birdSprite = new Sprite(birdTexture);
@@ -68,6 +69,8 @@ public class Main implements ApplicationListener {
 
         spriteBatch = new SpriteBatch();
         viewport = new FitViewport(SCREEN_WIDTH, SCREEN_HEIGHT);
+
+        createGround();
 
         resetGame();
     }
@@ -176,7 +179,7 @@ public class Main implements ApplicationListener {
 
         // Add new pipes
         if (pipes.get(pipes.size() - 1).getX() < SCREEN_WIDTH - HORIZONTAL_PIPE_GAP) {
-            createNewPipes();
+            createPipes();
         }
 
         // Remove pipes off the screen
@@ -191,7 +194,7 @@ public class Main implements ApplicationListener {
             ground.translateX(FLY_SPEED * deltaTime);
             // Move ground to front
             if (ground.getX() < -groundTexture.getWidth()) {
-                ground.setX(groundTexture.getWidth() - 2);
+                ground.setX(groundTexture.getWidth() - 1);
             }
         }
     }
@@ -200,19 +203,10 @@ public class Main implements ApplicationListener {
         birdSprite.setY(SCREEN_HEIGHT / 2);
         birdVelocity = 0;
         pipes = new ArrayList<>();
-        grounds = new ArrayList<>();
-
-        Sprite groundSprite;
-        groundSprite = new Sprite(groundTexture);
-        grounds.add(groundSprite);
-        groundSprite = new Sprite(groundTexture);
-        groundSprite.setX(groundTexture.getWidth());
-        grounds.add(groundSprite);
-
-        createNewPipes();
+        createPipes();
     }
 
-    private void createNewPipes() {
+    private void createPipes() {
         Sprite pipeSprite;
         float randomPosition = MathUtils.random(MIN_PIPES_HEIGHT, MAX_PIPES_HEIGHT);
         Vector2 pipePosition = new Vector2(SCREEN_WIDTH, randomPosition);
@@ -230,5 +224,15 @@ public class Main implements ApplicationListener {
                 pipeTexture.getWidth(),
                 pipeTexture.getHeight());
         pipes.add(pipeSprite);
+    }
+
+    private void createGround() {
+        grounds = new ArrayList<>();
+        Sprite groundSprite;
+        groundSprite = new Sprite(groundTexture);
+        grounds.add(groundSprite);
+        groundSprite = new Sprite(groundTexture);
+        groundSprite.setX(groundTexture.getWidth());
+        grounds.add(groundSprite);
     }
 }

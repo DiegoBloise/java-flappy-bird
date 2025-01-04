@@ -6,12 +6,16 @@ import java.util.List;
 import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.FitViewport;
 
 public class Main implements ApplicationListener {
 
@@ -19,46 +23,82 @@ public class Main implements ApplicationListener {
     private final int SCREEN_WIDTH = 320;
 
     private final float GRAVITY = 35;
+    // private final float GRAVITY = 0;
     private final float FLAP_FORCE = 25 * GRAVITY;
+    private final float FLY_SPEED = -50;
 
     private float deltaTime;
 
-    private float BIRD_RADIUS = 10;
-
-    private float birdPosition;
+    private final float BIRD_POSITION_X = 80;
     private float birdVelocity;
 
-    private final int PIPE_WIDTH = 52;
-    private final int PIPE_HEIGHT = SCREEN_HEIGHT;
-    private final int VERTICAL_PIPE_GAP = 55;
+    private final int VERTICAL_PIPE_GAP = 50;
     private final int HORIZONTAL_PIPE_GAP = 150;
+    private final float MIN_PIPES_HEIGHT = (SCREEN_HEIGHT / 2) - 40;
+    private final float MAX_PIPES_HEIGHT = (SCREEN_HEIGHT / 2) + 150;
 
-    private int pipeCount;
-
-    private List<Vector2> pipes;
+    private List<Sprite> pipes;
+    private List<Sprite> grounds;
 
     private ShapeRenderer shapeRenderer;
+
+    private Texture backgroundTexture;
+    private Texture groundTexture;
+    private Texture birdTexture;
+    private Texture pipeTexture;
+    private Sound wingSound;
+
+    private SpriteBatch spriteBatch;
+    private FitViewport viewport;
+
+    private Sprite birdSprite;
 
     @Override
     public void create() {
         shapeRenderer = new ShapeRenderer();
+
+        backgroundTexture = new Texture("assets/sprites/background-day.png");
+        groundTexture = new Texture("assets/sprites/base.png");
+        birdTexture = new Texture("assets/sprites/yellowbird-downflap.png");
+        pipeTexture = new Texture("assets/sprites/pipe-green.png");
+        wingSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/wing.wav"));
+
+        birdSprite = new Sprite(birdTexture);
+        birdSprite.setX(BIRD_POSITION_X);
+
+        spriteBatch = new SpriteBatch();
+        viewport = new FitViewport(SCREEN_WIDTH, SCREEN_HEIGHT);
+
         resetGame();
     }
 
     @Override
     public void resize(int width, int height) {
-
+        viewport.update(width, height, true);
     }
 
     @Override
     public void render() {
         deltaTime = Gdx.graphics.getDeltaTime();
+
         handleInput();
         gameLogic();
-        pipes();
+        pipesHandler();
+        groundHandler();
+
         ScreenUtils.clear(Color.valueOf("#0066FF"));
+        viewport.apply();
+        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+        spriteBatch.begin();
+
+        drawBackground();
         drawBird();
         drawPipes();
+        drawGround();
+
+        spriteBatch.end();
+
+        // System.out.println("PIPES rendered: " + pipes.size());
     }
 
     @Override
@@ -72,83 +112,123 @@ public class Main implements ApplicationListener {
     @Override
     public void dispose() {
         shapeRenderer.dispose();
+        spriteBatch.dispose();
+    }
+
+    private void drawBackground() {
+        float worldWidth = viewport.getWorldWidth();
+        float worldHeight = viewport.getWorldHeight();
+        spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
     }
 
     private void drawBird() {
-        shapeRenderer.begin(ShapeType.Filled);
-        shapeRenderer.setColor(Color.RED);
-        shapeRenderer.circle(100, birdPosition, BIRD_RADIUS);
-        shapeRenderer.end();
+        // shapeRenderer.begin(ShapeType.Filled);
+        // shapeRenderer.setColor(Color.RED);
+        // shapeRenderer.circle(birdPositionX, birdPosition, BIRD_RADIUS);
+        // shapeRenderer.end();
+        birdSprite.draw(spriteBatch);
     }
 
     private void drawPipes() {
-        for (Vector2 pipe : pipes) {
-            // Top pipe
-            shapeRenderer.begin(ShapeType.Filled);
-            shapeRenderer.setColor(Color.GREEN);
-            shapeRenderer.rect(pipe.x, pipe.y + VERTICAL_PIPE_GAP, PIPE_WIDTH, PIPE_HEIGHT);
-            shapeRenderer.end();
+        for (Sprite pipe : pipes) {
+            pipe.draw(spriteBatch);
+        }
+    }
 
-            // Bottom pipe
-            shapeRenderer.begin(ShapeType.Filled);
-            shapeRenderer.setColor(Color.GREEN);
-            shapeRenderer.rect(pipe.x, pipe.y - PIPE_HEIGHT - VERTICAL_PIPE_GAP, PIPE_WIDTH, PIPE_HEIGHT);
-            shapeRenderer.end();
+    private void drawGround() {
+        for (Sprite ground : grounds) {
+            ground.draw(spriteBatch);
         }
     }
 
     private void handleInput() {
+        float worldHeight = viewport.getWorldHeight();
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-            if (birdPosition < SCREEN_HEIGHT - 50) {
+            if (birdSprite.getY() < worldHeight - 50 && birdSprite.getY() > 0) {
                 birdVelocity += FLAP_FORCE;
-            } else if (birdPosition > SCREEN_HEIGHT) {
+                wingSound.play();
+            } else {
                 birdVelocity = 0;
-                birdPosition = SCREEN_HEIGHT + BIRD_RADIUS;
             }
         }
     }
 
     private void gameLogic() {
+
+        float worldHeight = viewport.getWorldHeight();
+        float birdHeight = birdSprite.getHeight();
+
         birdVelocity -= GRAVITY;
 
-        birdPosition += birdVelocity * deltaTime;
+        birdSprite.setY(birdSprite.getY() + birdVelocity * deltaTime);
+        birdSprite.setY(MathUtils.clamp(birdSprite.getY(), 0, worldHeight - birdHeight));
 
-        if (birdPosition < -50) {
+        if (birdSprite.getY() < 1) {
             resetGame();
         }
     }
 
-    private void pipes() {
-
+    private void pipesHandler() {
         // Move pipes towards player
-        for (Vector2 pipe : pipes) {
-            pipe.x -= 50 * deltaTime;
+        for (Sprite pipe : pipes) {
+            pipe.translateX(FLY_SPEED * deltaTime);
         }
 
         // Add new pipes
-        if (pipes.get(pipeCount).x < SCREEN_WIDTH - HORIZONTAL_PIPE_GAP) {
-            pipeCount++;
-            addNewPipe();
+        if (pipes.get(pipes.size() - 1).getX() < SCREEN_WIDTH - HORIZONTAL_PIPE_GAP) {
+            createNewPipes();
         }
 
         // Remove pipes off the screen
-        if (pipes.get(0).x < -PIPE_WIDTH) {
-            pipeCount--;
+        if (pipes.get(0).getX() < -pipeTexture.getWidth()) {
             pipes.remove(0);
         }
     }
 
-    private void resetGame() {
-        birdPosition = SCREEN_HEIGHT / 2;
-        birdVelocity = 0;
-        pipes = new ArrayList<>();
-        pipeCount = 0;
-        addNewPipe();
+    private void groundHandler() {
+        // Move ground towards player
+        for (Sprite ground : grounds) {
+            ground.translateX(FLY_SPEED * deltaTime);
+            // Move ground to front
+            if (ground.getX() < -groundTexture.getWidth()) {
+                ground.setX(groundTexture.getWidth() - 2);
+            }
+        }
     }
 
-    private void addNewPipe() {
-        float randomPosition = MathUtils.random((SCREEN_HEIGHT / 2) - 100, (SCREEN_HEIGHT / 2) + 100);
+    private void resetGame() {
+        birdSprite.setY(SCREEN_HEIGHT / 2);
+        birdVelocity = 0;
+        pipes = new ArrayList<>();
+        grounds = new ArrayList<>();
+
+        Sprite groundSprite;
+        groundSprite = new Sprite(groundTexture);
+        grounds.add(groundSprite);
+        groundSprite = new Sprite(groundTexture);
+        groundSprite.setX(groundTexture.getWidth());
+        grounds.add(groundSprite);
+
+        createNewPipes();
+    }
+
+    private void createNewPipes() {
+        Sprite pipeSprite;
+        float randomPosition = MathUtils.random(MIN_PIPES_HEIGHT, MAX_PIPES_HEIGHT);
         Vector2 pipePosition = new Vector2(SCREEN_WIDTH, randomPosition);
-        pipes.add(pipePosition);
+
+        // Top pipe
+        pipeSprite = new Sprite(pipeTexture);
+        pipeSprite.setBounds(pipePosition.x, pipePosition.y + VERTICAL_PIPE_GAP, pipeTexture.getWidth(),
+                pipeTexture.getHeight());
+        pipeSprite.setFlip(false, true);
+        pipes.add(pipeSprite);
+
+        // Bottom pipe
+        pipeSprite = new Sprite(pipeTexture);
+        pipeSprite.setBounds(pipePosition.x, pipePosition.y - pipeTexture.getHeight() - VERTICAL_PIPE_GAP,
+                pipeTexture.getWidth(),
+                pipeTexture.getHeight());
+        pipes.add(pipeSprite);
     }
 }

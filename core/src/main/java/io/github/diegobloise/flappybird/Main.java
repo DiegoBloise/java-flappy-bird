@@ -44,7 +44,9 @@ public class Main implements ApplicationListener {
     private Texture groundTexture;
     private Texture birdTexture;
     private Texture pipeTexture;
+
     private Sound wingSound;
+    private Sound hitSound;
 
     private SpriteBatch spriteBatch;
     private FitViewport viewport;
@@ -63,6 +65,7 @@ public class Main implements ApplicationListener {
         pipeTexture = new Texture("assets/sprites/pipe-green.png");
 
         wingSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/wing.wav"));
+        hitSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/hit.wav"));
 
         birdSprite = new Sprite(birdTexture);
         birdSprite.setX(BIRD_POSITION_X);
@@ -86,6 +89,7 @@ public class Main implements ApplicationListener {
 
     @Override
     public void render() {
+        Gdx.graphics.setTitle("Java Flappy Bird (FPS: " + Integer.toString(Gdx.graphics.getFramesPerSecond()) + ")");
         input();
         logic();
         draw();
@@ -240,6 +244,7 @@ public class Main implements ApplicationListener {
 
     private void checkCollision(Rectangle rectangle) {
         if (birdRectangle.overlaps(rectangle)) {
+            hitSound.play();
             resetGame();
         }
     }

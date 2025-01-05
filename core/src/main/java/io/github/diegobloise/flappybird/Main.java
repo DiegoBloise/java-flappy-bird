@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
@@ -39,6 +41,7 @@ public class Main implements ApplicationListener {
 
     private List<Sprite> pipes;
     private List<Sprite> grounds;
+    private List<Rectangle> scoreRectangles;
 
     private Texture backgroundTexture;
     private Texture groundTexture;
@@ -47,6 +50,7 @@ public class Main implements ApplicationListener {
 
     private Sound wingSound;
     private Sound hitSound;
+    private Sound pointSound;
 
     private SpriteBatch spriteBatch;
     private FitViewport viewport;
@@ -57,6 +61,10 @@ public class Main implements ApplicationListener {
     private Rectangle pipeRectangle;
     private Rectangle groundRectangle;
 
+    private Integer score;
+
+    private ShapeRenderer shape;
+
     @Override
     public void create() {
         backgroundTexture = new Texture("assets/sprites/background-day.png");
@@ -66,6 +74,7 @@ public class Main implements ApplicationListener {
 
         wingSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/wing.wav"));
         hitSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/hit.wav"));
+        pointSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/point.wav"));
 
         birdSprite = new Sprite(birdTexture);
         birdSprite.setX(BIRD_POSITION_X);
@@ -76,6 +85,8 @@ public class Main implements ApplicationListener {
         birdRectangle = new Rectangle();
         pipeRectangle = new Rectangle();
         groundRectangle = new Rectangle();
+
+        shape = new ShapeRenderer();
 
         createGround();
 
@@ -147,6 +158,7 @@ public class Main implements ApplicationListener {
 
         pipesHandler();
         groundHandler();
+        scoreHandler();
 
         float worldHeight = viewport.getWorldHeight();
         float birdHeight = birdSprite.getHeight();
@@ -156,13 +168,17 @@ public class Main implements ApplicationListener {
         birdSprite.translateY(birdVelocity * deltaTime);
         birdSprite.setY(MathUtils.clamp(birdSprite.getY(), 0, worldHeight - birdHeight));
 
-        birdRectangle.set(birdSprite.getX(), birdSprite.getY(), birdSprite.getWidth(), birdSprite.getHeight());
+        birdRectangle.set(birdSprite.getX() + 5, birdSprite.getY() + 5, birdSprite.getWidth() - 10,
+                birdSprite.getHeight() - 10);
+
+        checkScore();
     }
 
     private void draw() {
         ScreenUtils.clear(Color.valueOf("#0066FF"));
         viewport.apply();
         spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+
         spriteBatch.begin();
 
         drawBackground();
@@ -171,6 +187,8 @@ public class Main implements ApplicationListener {
         drawGround();
 
         spriteBatch.end();
+
+        // debug();
     }
 
     private void pipesHandler() {
@@ -205,11 +223,22 @@ public class Main implements ApplicationListener {
         }
     }
 
+    private void scoreHandler() {
+        for (Rectangle scoreRectangle : scoreRectangles) {
+            scoreRectangle.setX(scoreRectangle.getX() + FLY_SPEED * deltaTime);
+        }
+    }
+
     private void resetGame() {
         birdSprite.setY(SCREEN_HEIGHT / 2);
         birdVelocity = 0;
+
         pipes = new ArrayList<>();
+        scoreRectangles = new ArrayList<>();
+
         createPipes();
+
+        score = 0;
     }
 
     private void createPipes() {
@@ -230,6 +259,13 @@ public class Main implements ApplicationListener {
                 pipeTexture.getWidth(),
                 pipeTexture.getHeight());
         pipes.add(pipeSprite);
+
+        // Score Area
+        scoreRectangles.add(new Rectangle(
+                pipePosition.x + pipeTexture.getWidth() + 20,
+                pipePosition.y - VERTICAL_PIPE_GAP,
+                30,
+                VERTICAL_PIPE_GAP * 2));
     }
 
     private void createGround() {
@@ -247,5 +283,31 @@ public class Main implements ApplicationListener {
             hitSound.play();
             resetGame();
         }
+    }
+
+    private void checkScore() {
+        for (int i = scoreRectangles.size() - 1; i >= 0; i--) {
+            if (birdRectangle.overlaps(scoreRectangles.get(i))) {
+                score++;
+                scoreRectangles.remove(i);
+                pointSound.play();
+            }
+        }
+    }
+
+    private void debug() {
+        for (Rectangle rect : scoreRectangles) {
+            shape.begin(ShapeType.Filled);
+            shape.setColor(Color.RED);
+            shape.rect(rect.getX(), rect.getY(), rect.getWidth(),
+                    rect.getHeight());
+            shape.end();
+        }
+
+        shape.begin(ShapeType.Filled);
+        shape.setColor(Color.GREEN);
+        shape.rect(birdRectangle.getX(), birdRectangle.getY(), birdRectangle.getWidth(),
+                birdRectangle.getHeight());
+        shape.end();
     }
 }

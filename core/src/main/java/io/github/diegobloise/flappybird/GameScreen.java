@@ -285,9 +285,10 @@ public class GameScreen implements Screen {
         // Move ground towards player
         for (Sprite ground : grounds) {
             ground.translateX(FLY_SPEED * deltaTime);
+            ground.setY(0);
             // Move ground to front
             if (ground.getX() < -groundTexture.getWidth()) {
-                ground.setX(groundTexture.getWidth() - 1);
+                ground.setX(groundTexture.getWidth() - 4);
             }
             groundRectangle.set(ground.getX(), ground.getY(), ground.getWidth(), ground.getHeight());
             checkCollision(groundRectangle);
@@ -349,7 +350,8 @@ public class GameScreen implements Screen {
         groundSprite = new Sprite(groundTexture);
         grounds.add(groundSprite);
         groundSprite = new Sprite(groundTexture);
-        groundSprite.setX(groundTexture.getWidth());
+        groundSprite.setX(groundTexture.getWidth() - 2);
+        groundSprite.setY(0);
         grounds.add(groundSprite);
     }
 

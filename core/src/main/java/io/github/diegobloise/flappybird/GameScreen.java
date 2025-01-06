@@ -70,26 +70,26 @@ public class GameScreen implements Screen {
         this.game = game;
 
         backgroundTextures = new ArrayList<>();
-        backgroundTextures.add(new Texture("assets/sprites/background-day.png"));
-        backgroundTextures.add(new Texture("assets/sprites/background-night.png"));
+        backgroundTextures.add(new Texture(Gdx.files.internal("sprites/background-day.png")));
+        backgroundTextures.add(new Texture(Gdx.files.internal("sprites/background-night.png")));
         backgroundTexture = backgroundTextures.get(0);
 
         birdTextures = new ArrayList<>();
-        birdTextures.add(new Texture("assets/sprites/yellowbird-downflap.png"));
-        birdTextures.add(new Texture("assets/sprites/redbird-downflap.png"));
-        birdTextures.add(new Texture("assets/sprites/bluebird-downflap.png"));
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/yellowbird-downflap.png")));
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/redbird-downflap.png")));
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/bluebird-downflap.png")));
         birdTexture = birdTextures.get(0);
 
         pipeTextures = new ArrayList<>();
-        pipeTextures.add(new Texture("assets/sprites/pipe-green.png"));
-        pipeTextures.add(new Texture("assets/sprites/pipe-red.png"));
+        pipeTextures.add(new Texture(Gdx.files.internal("sprites/pipe-green.png")));
+        pipeTextures.add(new Texture(Gdx.files.internal("sprites/pipe-red.png")));
         pipeTexture = pipeTextures.get(0);
 
-        groundTexture = new Texture("assets/sprites/base.png");
+        groundTexture = new Texture("sprites/base.png");
 
-        wingSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/wing.wav"));
-        hitSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/hit.wav"));
-        pointSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/point.wav"));
+        wingSound = Gdx.audio.newSound(Gdx.files.internal("audio/wing.wav"));
+        hitSound = Gdx.audio.newSound(Gdx.files.internal("audio/hit.wav"));
+        pointSound = Gdx.audio.newSound(Gdx.files.internal("audio/point.wav"));
 
         birdSprite = new Sprite(birdTexture);
         birdSprite.setX(BIRD_POSITION_X);

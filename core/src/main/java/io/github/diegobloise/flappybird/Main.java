@@ -65,6 +65,10 @@ public class Main implements ApplicationListener {
 
     private ShapeRenderer shape;
 
+    private Boolean debugMode;
+
+    private final float BIRD_ROTATION_SPEED = 5;
+
     @Override
     public void create() {
         backgroundTexture = new Texture("assets/sprites/background-day.png");
@@ -78,6 +82,8 @@ public class Main implements ApplicationListener {
 
         birdSprite = new Sprite(birdTexture);
         birdSprite.setX(BIRD_POSITION_X);
+        birdSprite.setOriginCenter();
+        birdSprite.setOrigin(birdSprite.getOriginX() + 2, birdSprite.getOriginY());
 
         spriteBatch = new SpriteBatch();
         viewport = new FitViewport(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -87,6 +93,8 @@ public class Main implements ApplicationListener {
         groundRectangle = new Rectangle();
 
         shape = new ShapeRenderer();
+
+        debugMode = false;
 
         createGround();
 
@@ -151,6 +159,14 @@ public class Main implements ApplicationListener {
                 birdVelocity = 0;
             }
         }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+            debugMode = !debugMode;
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+            resetGame();
+        }
     }
 
     private void logic() {
@@ -168,8 +184,22 @@ public class Main implements ApplicationListener {
         birdSprite.translateY(birdVelocity * deltaTime);
         birdSprite.setY(MathUtils.clamp(birdSprite.getY(), 0, worldHeight - birdHeight));
 
-        birdRectangle.set(birdSprite.getX() + 5, birdSprite.getY() + 5, birdSprite.getWidth() - 10,
-                birdSprite.getHeight() - 10);
+        if (birdVelocity > 0) {
+            birdSprite.setRotation(
+                    MathUtils.lerpAngleDeg(birdSprite.getRotation(), 50.0f, (BIRD_ROTATION_SPEED + 5) * deltaTime));
+        } else {
+            birdSprite.setRotation(
+                    MathUtils.lerpAngleDeg(birdSprite.getRotation(), -50.0f, BIRD_ROTATION_SPEED * deltaTime));
+        }
+
+        // Bird CollisionBox
+        birdRectangle.set(
+                birdSprite.getX() + birdSprite.getWidth() / 2,
+                birdSprite.getY() + birdSprite.getHeight() / 2,
+                birdSprite.getHeight() - 7,
+                birdSprite.getHeight() - 7);
+        birdRectangle.setCenter(birdSprite.getX() + birdSprite.getWidth() / 2,
+                birdSprite.getY() + birdSprite.getHeight() / 2);
 
         checkScore();
     }
@@ -188,7 +218,7 @@ public class Main implements ApplicationListener {
 
         spriteBatch.end();
 
-        // debug();
+        debug();
     }
 
     private void pipesHandler() {
@@ -200,7 +230,7 @@ public class Main implements ApplicationListener {
         }
 
         // Add new pipes
-        if (pipes.get(pipes.size() - 1).getX() < SCREEN_WIDTH - HORIZONTAL_PIPE_GAP) {
+        if (pipes.get(pipes.size() - 1).getX() < viewport.getWorldWidth() - HORIZONTAL_PIPE_GAP) {
             createPipes();
         }
 
@@ -230,7 +260,7 @@ public class Main implements ApplicationListener {
     }
 
     private void resetGame() {
-        birdSprite.setY(SCREEN_HEIGHT / 2);
+        birdSprite.setY(viewport.getWorldHeight() / 2);
         birdVelocity = 0;
 
         pipes = new ArrayList<>();
@@ -244,7 +274,7 @@ public class Main implements ApplicationListener {
     private void createPipes() {
         Sprite pipeSprite;
         float randomPosition = MathUtils.random(MIN_PIPES_HEIGHT, MAX_PIPES_HEIGHT);
-        Vector2 pipePosition = new Vector2(SCREEN_WIDTH, randomPosition);
+        Vector2 pipePosition = new Vector2(viewport.getWorldWidth(), randomPosition);
 
         // Top pipe
         pipeSprite = new Sprite(pipeTexture);
@@ -280,8 +310,8 @@ public class Main implements ApplicationListener {
 
     private void checkCollision(Rectangle rectangle) {
         if (birdRectangle.overlaps(rectangle)) {
-            hitSound.play();
-            resetGame();
+            // hitSound.play();
+            // resetGame();
         }
     }
 
@@ -295,19 +325,22 @@ public class Main implements ApplicationListener {
         }
     }
 
+    @SuppressWarnings("unused")
     private void debug() {
-        for (Rectangle rect : scoreRectangles) {
+        if (debugMode) {
+            for (Rectangle rect : scoreRectangles) {
+                shape.begin(ShapeType.Filled);
+                shape.setColor(Color.RED);
+                shape.rect(rect.getX(), rect.getY(), rect.getWidth(),
+                        rect.getHeight());
+                shape.end();
+            }
+
             shape.begin(ShapeType.Filled);
-            shape.setColor(Color.RED);
-            shape.rect(rect.getX(), rect.getY(), rect.getWidth(),
-                    rect.getHeight());
+            shape.setColor(Color.GREEN);
+            shape.rect(birdRectangle.getX(), birdRectangle.getY(), birdRectangle.getWidth(),
+                    birdRectangle.getHeight());
             shape.end();
         }
-
-        shape.begin(ShapeType.Filled);
-        shape.setColor(Color.GREEN);
-        shape.rect(birdRectangle.getX(), birdRectangle.getY(), birdRectangle.getWidth(),
-                birdRectangle.getHeight());
-        shape.end();
     }
 }

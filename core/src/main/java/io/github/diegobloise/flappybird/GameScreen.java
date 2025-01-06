@@ -3,30 +3,26 @@ package io.github.diegobloise.flappybird;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.badlogic.gdx.ApplicationListener;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
-import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.utils.ScreenUtils;
-import com.badlogic.gdx.utils.viewport.FitViewport;
 
-public class Main implements ApplicationListener {
+public class GameScreen implements Screen {
 
-    private final int SCREEN_HEIGHT = 480;
-    private final int SCREEN_WIDTH = 320;
+    final FlappyBird game;
 
     private final float GRAVITY = 35;
-    // private final float GRAVITY = 0;
-    private final float FLAP_FORCE = 25 * GRAVITY;
+    private final float FLAP_FORCE = 13 * GRAVITY;
     private final float FLY_SPEED = -50;
 
     private float deltaTime;
@@ -36,12 +32,16 @@ public class Main implements ApplicationListener {
 
     private final int VERTICAL_PIPE_GAP = 50;
     private final int HORIZONTAL_PIPE_GAP = 150;
-    private final float MIN_PIPES_HEIGHT = (SCREEN_HEIGHT / 2) - 40;
-    private final float MAX_PIPES_HEIGHT = (SCREEN_HEIGHT / 2) + 150;
+    private final float minPipesHeight;
+    private final float maxPipesHeight;
 
     private List<Sprite> pipes;
     private List<Sprite> grounds;
     private List<Rectangle> scoreRectangles;
+
+    private List<Texture> backgroundTextures;
+    private List<Texture> birdTextures;
+    private List<Texture> pipeTextures;
 
     private Texture backgroundTexture;
     private Texture groundTexture;
@@ -51,9 +51,6 @@ public class Main implements ApplicationListener {
     private Sound wingSound;
     private Sound hitSound;
     private Sound pointSound;
-
-    private SpriteBatch spriteBatch;
-    private FitViewport viewport;
 
     private Sprite birdSprite;
 
@@ -69,12 +66,26 @@ public class Main implements ApplicationListener {
 
     private final float BIRD_ROTATION_SPEED = 5;
 
-    @Override
-    public void create() {
-        backgroundTexture = new Texture("assets/sprites/background-day.png");
+    public GameScreen(final FlappyBird game) {
+        this.game = game;
+
+        backgroundTextures = new ArrayList<>();
+        backgroundTextures.add(new Texture("assets/sprites/background-day.png"));
+        backgroundTextures.add(new Texture("assets/sprites/background-night.png"));
+        backgroundTexture = backgroundTextures.get(0);
+
+        birdTextures = new ArrayList<>();
+        birdTextures.add(new Texture("assets/sprites/yellowbird-downflap.png"));
+        birdTextures.add(new Texture("assets/sprites/redbird-downflap.png"));
+        birdTextures.add(new Texture("assets/sprites/bluebird-downflap.png"));
+        birdTexture = birdTextures.get(0);
+
+        pipeTextures = new ArrayList<>();
+        pipeTextures.add(new Texture("assets/sprites/pipe-green.png"));
+        pipeTextures.add(new Texture("assets/sprites/pipe-red.png"));
+        pipeTexture = pipeTextures.get(0);
+
         groundTexture = new Texture("assets/sprites/base.png");
-        birdTexture = new Texture("assets/sprites/yellowbird-downflap.png");
-        pipeTexture = new Texture("assets/sprites/pipe-green.png");
 
         wingSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/wing.wav"));
         hitSound = Gdx.audio.newSound(Gdx.files.internal("assets/audio/hit.wav"));
@@ -85,12 +96,12 @@ public class Main implements ApplicationListener {
         birdSprite.setOriginCenter();
         birdSprite.setOrigin(birdSprite.getOriginX() + 2, birdSprite.getOriginY());
 
-        spriteBatch = new SpriteBatch();
-        viewport = new FitViewport(SCREEN_WIDTH, SCREEN_HEIGHT);
-
         birdRectangle = new Rectangle();
         pipeRectangle = new Rectangle();
         groundRectangle = new Rectangle();
+
+        minPipesHeight = (game.SCREEN_HEIGHT / 2) - 40;
+        maxPipesHeight = (game.SCREEN_HEIGHT / 2) + 150;
 
         shape = new ShapeRenderer();
 
@@ -102,16 +113,25 @@ public class Main implements ApplicationListener {
     }
 
     @Override
-    public void resize(int width, int height) {
-        viewport.update(width, height, true);
+    public void show() {
+
     }
 
     @Override
-    public void render() {
+    public void render(float delta) {
         Gdx.graphics.setTitle("Java Flappy Bird (FPS: " + Integer.toString(Gdx.graphics.getFramesPerSecond()) + ")");
         input();
         logic();
         draw();
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        game.viewport.update(width, height, true);
+    }
+
+    @Override
+    public void hide() {
     }
 
     @Override
@@ -124,36 +144,52 @@ public class Main implements ApplicationListener {
 
     @Override
     public void dispose() {
-        spriteBatch.dispose();
+        for (Texture texture : backgroundTextures) {
+            texture.dispose();
+        }
+        for (Texture texture : birdTextures) {
+            texture.dispose();
+        }
+        for (Texture texture : pipeTextures) {
+            texture.dispose();
+        }
+        backgroundTexture.dispose();
+        birdTexture.dispose();
+        pipeTexture.dispose();
+        groundTexture.dispose();
+        wingSound.dispose();
+        hitSound.dispose();
+        pointSound.dispose();
     }
 
     private void drawBackground() {
-        float worldWidth = viewport.getWorldWidth();
-        float worldHeight = viewport.getWorldHeight();
-        spriteBatch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
+        float worldWidth = game.viewport.getWorldWidth();
+        float worldHeight = game.viewport.getWorldHeight();
+        game.batch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
     }
 
     private void drawBird() {
-        birdSprite.draw(spriteBatch);
+        birdSprite.draw(game.batch);
     }
 
     private void drawPipes() {
         for (Sprite pipe : pipes) {
-            pipe.draw(spriteBatch);
+            pipe.draw(game.batch);
         }
     }
 
     private void drawGround() {
         for (Sprite ground : grounds) {
-            ground.draw(spriteBatch);
+            ground.draw(game.batch);
         }
     }
 
     private void input() {
-        float worldHeight = viewport.getWorldHeight();
+        float worldHeight = game.viewport.getWorldHeight();
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.justTouched()) {
             if (birdSprite.getY() < worldHeight - 50 && birdSprite.getY() > 0) {
-                birdVelocity += FLAP_FORCE;
+                // birdVelocity += FLAP_FORCE; += or = ?
+                birdVelocity = FLAP_FORCE;
                 wingSound.play();
             } else {
                 birdVelocity = 0;
@@ -176,7 +212,7 @@ public class Main implements ApplicationListener {
         groundHandler();
         scoreHandler();
 
-        float worldHeight = viewport.getWorldHeight();
+        float worldHeight = game.viewport.getWorldHeight();
         float birdHeight = birdSprite.getHeight();
 
         birdVelocity -= GRAVITY;
@@ -205,18 +241,23 @@ public class Main implements ApplicationListener {
     }
 
     private void draw() {
-        ScreenUtils.clear(Color.valueOf("#0066FF"));
-        viewport.apply();
-        spriteBatch.setProjectionMatrix(viewport.getCamera().combined);
+        ScreenUtils.clear(Color.BLACK);
+        game.viewport.apply();
+        game.batch.setProjectionMatrix(game.viewport.getCamera().combined);
 
-        spriteBatch.begin();
+        game.batch.begin();
 
         drawBackground();
         drawBird();
         drawPipes();
         drawGround();
 
-        spriteBatch.end();
+        game.font.setColor(Color.WHITE);
+        game.font.getData().setScale(2);
+        game.font.draw(game.batch, score.toString(), game.viewport.getWorldWidth() / 2,
+                game.viewport.getWorldHeight() - 50);
+
+        game.batch.end();
 
         debug();
     }
@@ -230,7 +271,7 @@ public class Main implements ApplicationListener {
         }
 
         // Add new pipes
-        if (pipes.get(pipes.size() - 1).getX() < viewport.getWorldWidth() - HORIZONTAL_PIPE_GAP) {
+        if (pipes.get(pipes.size() - 1).getX() < game.viewport.getWorldWidth() - HORIZONTAL_PIPE_GAP) {
             createPipes();
         }
 
@@ -260,8 +301,12 @@ public class Main implements ApplicationListener {
     }
 
     private void resetGame() {
-        birdSprite.setY(viewport.getWorldHeight() / 2);
-        birdVelocity = 0;
+        backgroundTexture = backgroundTextures.get(MathUtils.random(backgroundTextures.size() - 1));
+        pipeTexture = pipeTextures.get(MathUtils.random(pipeTextures.size() - 1));
+        birdTexture = birdTextures.get(MathUtils.random(birdTextures.size() - 1));
+
+        birdSprite.setY(game.viewport.getWorldHeight() / 2);
+        birdVelocity = 550;
 
         pipes = new ArrayList<>();
         scoreRectangles = new ArrayList<>();
@@ -273,8 +318,8 @@ public class Main implements ApplicationListener {
 
     private void createPipes() {
         Sprite pipeSprite;
-        float randomPosition = MathUtils.random(MIN_PIPES_HEIGHT, MAX_PIPES_HEIGHT);
-        Vector2 pipePosition = new Vector2(viewport.getWorldWidth(), randomPosition);
+        float randomPosition = MathUtils.random(minPipesHeight, maxPipesHeight);
+        Vector2 pipePosition = new Vector2(game.viewport.getWorldWidth(), randomPosition);
 
         // Top pipe
         pipeSprite = new Sprite(pipeTexture);
@@ -310,8 +355,8 @@ public class Main implements ApplicationListener {
 
     private void checkCollision(Rectangle rectangle) {
         if (birdRectangle.overlaps(rectangle)) {
-            // hitSound.play();
-            // resetGame();
+            hitSound.play();
+            resetGame();
         }
     }
 

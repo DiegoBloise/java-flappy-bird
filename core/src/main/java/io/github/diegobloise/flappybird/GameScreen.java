@@ -22,8 +22,8 @@ public class GameScreen implements Screen {
 
     final FlappyBird game;
 
-    private final float GRAVITY = 20;
-    private final float FLAP_FORCE = 14 * GRAVITY;
+    private final float GRAVITY = 18;
+    private final float FLAP_FORCE = 12 * GRAVITY;
     private final float FLY_SPEED = -40;
     private final float BIRD_ROTATION_SPEED = 5;
 
@@ -188,7 +188,7 @@ public class GameScreen implements Screen {
     private void input() {
         float worldHeight = game.viewport.getWorldHeight();
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.justTouched()) {
-            if (birdSprite.getY() < worldHeight - 50 && birdSprite.getY() > 0) {
+            if (birdSprite.getY() < worldHeight - 25 && birdSprite.getY() > 0) {
                 // birdVelocity += FLAP_FORCE; += or = ?
                 birdVelocity = FLAP_FORCE;
                 wingSound.play();
@@ -232,7 +232,6 @@ public class GameScreen implements Screen {
         drawGround();
 
         game.font.setColor(Color.WHITE);
-        game.font.getData().setScale(2);
         game.font.draw(game.batch, score.toString(), game.viewport.getWorldWidth() / 2,
                 game.viewport.getWorldHeight() - 50);
 
@@ -281,8 +280,8 @@ public class GameScreen implements Screen {
         birdRectangle.set(
                 birdSprite.getX() + birdSprite.getWidth() / 2,
                 birdSprite.getY() + birdSprite.getHeight() / 2,
-                birdSprite.getHeight() - 7,
-                birdSprite.getHeight() - 7);
+                birdSprite.getHeight() - 5,
+                birdSprite.getHeight() - 5);
         birdRectangle.setCenter(birdSprite.getX() + birdSprite.getWidth() / 2,
                 birdSprite.getY() + birdSprite.getHeight() / 2);
     }
@@ -332,10 +331,10 @@ public class GameScreen implements Screen {
 
         // Create Score Area
         scoreRectangles.add(new Rectangle(
-                pipePosition.x + pipeTexture.getWidth() + 15,
-                pipePosition.y - VERTICAL_PIPE_GAP,
-                30,
-                VERTICAL_PIPE_GAP * 2));
+                pipePosition.x + pipeTexture.getWidth() + 5,
+                pipePosition.y - (VERTICAL_PIPE_GAP * 1.5f),
+                20,
+                VERTICAL_PIPE_GAP * 3));
     }
 
     private void createGround() {
@@ -423,12 +422,11 @@ public class GameScreen implements Screen {
             // Debug text
             game.batch.begin();
             game.font.setColor(Color.WHITE);
-            game.font.getData().setScale(1);
             game.font.draw(game.batch, "PIPES COLLISIONS: " + pipeRectangles.size(), 0, game.viewport.getWorldHeight());
             game.font.draw(game.batch, "SCORE AREAS: " + scoreRectangles.size(), 0,
-                    game.viewport.getWorldHeight() - 20);
-            game.font.draw(game.batch, "TOTAL PIPES: " + pipes.size(), 0, game.viewport.getWorldHeight() - 40);
-            game.font.draw(game.batch, "TOTAL GROUNDS: " + grounds.size(), 0, game.viewport.getWorldHeight() - 60);
+                    game.viewport.getWorldHeight() - 10);
+            game.font.draw(game.batch, "TOTAL PIPES: " + pipes.size(), 0, game.viewport.getWorldHeight() - 20);
+            game.font.draw(game.batch, "TOTAL GROUNDS: " + grounds.size(), 0, game.viewport.getWorldHeight() - 30);
             game.batch.end();
         }
     }

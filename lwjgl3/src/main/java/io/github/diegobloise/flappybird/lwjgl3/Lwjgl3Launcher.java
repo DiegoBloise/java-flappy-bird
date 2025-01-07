@@ -26,7 +26,7 @@ public class Lwjgl3Launcher {
         configuration.setTitle("Java Flappy Bird");
         configuration.useVsync(true);
         configuration.setForegroundFPS(Lwjgl3ApplicationConfiguration.getDisplayMode().refreshRate + 1);
-        configuration.setWindowedMode(game.SCREEN_WIDTH * 2, game.SCREEN_HEIGHT * 2);
+        configuration.setWindowedMode(game.SCREEN_WIDTH, game.SCREEN_HEIGHT);
         configuration.setWindowIcon(
                 "icons/icon_8.png",
                 "icons/icon_7.png",

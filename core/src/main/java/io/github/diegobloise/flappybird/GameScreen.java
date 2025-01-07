@@ -23,7 +23,8 @@ public class GameScreen implements Screen {
 
     private final float GRAVITY = 35;
     private final float FLAP_FORCE = 13 * GRAVITY;
-    private final float FLY_SPEED = -50;
+    private final float FLY_SPEED = -90;
+    private final float BIRD_ROTATION_SPEED = 5;
 
     private float deltaTime;
 
@@ -38,6 +39,7 @@ public class GameScreen implements Screen {
     private List<Sprite> pipes;
     private List<Sprite> grounds;
     private List<Rectangle> scoreRectangles;
+    private List<Rectangle> pipeRectangles;
 
     private List<Texture> backgroundTextures;
     private List<Texture> birdTextures;
@@ -55,7 +57,6 @@ public class GameScreen implements Screen {
     private Sprite birdSprite;
 
     private Rectangle birdRectangle;
-    private Rectangle pipeRectangle;
     private Rectangle groundRectangle;
 
     private Integer score;
@@ -63,8 +64,6 @@ public class GameScreen implements Screen {
     private ShapeRenderer shape;
 
     private Boolean debugMode;
-
-    private final float BIRD_ROTATION_SPEED = 5;
 
     public GameScreen(final FlappyBird game) {
         this.game = game;
@@ -75,10 +74,10 @@ public class GameScreen implements Screen {
         backgroundTexture = backgroundTextures.get(0);
 
         birdTextures = new ArrayList<>();
-        birdTextures.add(new Texture(Gdx.files.internal("sprites/yellowbird-downflap.png")));
-        birdTextures.add(new Texture(Gdx.files.internal("sprites/redbird-downflap.png")));
-        birdTextures.add(new Texture(Gdx.files.internal("sprites/bluebird-downflap.png")));
-        birdTexture = birdTextures.get(0);
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/yellowbird-midflap.png")));
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/redbird-midflap.png")));
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/bluebird-midflap.png")));
+        birdTexture = birdTextures.get(2);
 
         pipeTextures = new ArrayList<>();
         pipeTextures.add(new Texture(Gdx.files.internal("sprites/pipe-green.png")));
@@ -97,8 +96,7 @@ public class GameScreen implements Screen {
         birdSprite.setOrigin(birdSprite.getOriginX() + 2, birdSprite.getOriginY());
 
         birdRectangle = new Rectangle();
-        pipeRectangle = new Rectangle();
-        groundRectangle = new Rectangle();
+        groundRectangle = new Rectangle(0, 0, groundTexture.getWidth(), groundTexture.getHeight());
 
         minPipesHeight = (game.SCREEN_HEIGHT / 2) - 40;
         maxPipesHeight = (game.SCREEN_HEIGHT / 2) + 150;
@@ -209,35 +207,13 @@ public class GameScreen implements Screen {
         deltaTime = Gdx.graphics.getDeltaTime();
 
         pipesHandler();
-        groundHandler();
-        scoreHandler();
+        applyBirdPhisics();
 
-        float worldHeight = game.viewport.getWorldHeight();
-        float birdHeight = birdSprite.getHeight();
+        groundAnimation();
+        birdAnimation();
 
-        birdVelocity -= GRAVITY;
-
-        birdSprite.translateY(birdVelocity * deltaTime);
-        birdSprite.setY(MathUtils.clamp(birdSprite.getY(), 0, worldHeight - birdHeight));
-
-        if (birdVelocity > 0) {
-            birdSprite.setRotation(
-                    MathUtils.lerpAngleDeg(birdSprite.getRotation(), 50.0f, (BIRD_ROTATION_SPEED + 5) * deltaTime));
-        } else {
-            birdSprite.setRotation(
-                    MathUtils.lerpAngleDeg(birdSprite.getRotation(), -50.0f, BIRD_ROTATION_SPEED * deltaTime));
-        }
-
-        // Bird CollisionBox
-        birdRectangle.set(
-                birdSprite.getX() + birdSprite.getWidth() / 2,
-                birdSprite.getY() + birdSprite.getHeight() / 2,
-                birdSprite.getHeight() - 7,
-                birdSprite.getHeight() - 7);
-        birdRectangle.setCenter(birdSprite.getX() + birdSprite.getWidth() / 2,
-                birdSprite.getY() + birdSprite.getHeight() / 2);
-
-        checkScore();
+        updateCollisions();
+        checkCollisions();
     }
 
     private void draw() {
@@ -266,8 +242,6 @@ public class GameScreen implements Screen {
         // Move pipes towards player
         for (Sprite pipe : pipes) {
             pipe.translateX(FLY_SPEED * deltaTime);
-            pipeRectangle.set(pipe.getX(), pipe.getY(), pipe.getWidth(), pipe.getHeight());
-            checkCollision(pipeRectangle);
         }
 
         // Add new pipes
@@ -278,27 +252,36 @@ public class GameScreen implements Screen {
         // Remove pipes off the screen
         if (pipes.get(0).getX() < -pipeTexture.getWidth()) {
             pipes.remove(0);
+            pipeRectangles.remove(0);
         }
     }
 
-    private void groundHandler() {
-        // Move ground towards player
+    private void groundAnimation() {
         for (Sprite ground : grounds) {
             ground.translateX(FLY_SPEED * deltaTime);
-            ground.setY(0);
+
             // Move ground to front
             if (ground.getX() < -groundTexture.getWidth()) {
                 ground.setX(groundTexture.getWidth() - 4);
             }
-            groundRectangle.set(ground.getX(), ground.getY(), ground.getWidth(), ground.getHeight());
-            checkCollision(groundRectangle);
         }
     }
 
-    private void scoreHandler() {
+    private void updateCollisions() {
         for (Rectangle scoreRectangle : scoreRectangles) {
             scoreRectangle.setX(scoreRectangle.getX() + FLY_SPEED * deltaTime);
         }
+        for (Rectangle pipe : pipeRectangles) {
+            pipe.setX(pipe.getX() + FLY_SPEED * deltaTime);
+        }
+        // Bird CollisionBox
+        birdRectangle.set(
+                birdSprite.getX() + birdSprite.getWidth() / 2,
+                birdSprite.getY() + birdSprite.getHeight() / 2,
+                birdSprite.getHeight() - 7,
+                birdSprite.getHeight() - 7);
+        birdRectangle.setCenter(birdSprite.getX() + birdSprite.getWidth() / 2,
+                birdSprite.getY() + birdSprite.getHeight() / 2);
     }
 
     private void resetGame() {
@@ -306,11 +289,13 @@ public class GameScreen implements Screen {
         pipeTexture = pipeTextures.get(MathUtils.random(pipeTextures.size() - 1));
         birdTexture = birdTextures.get(MathUtils.random(birdTextures.size() - 1));
 
+        birdSprite.setTexture(birdTexture);
         birdSprite.setY(game.viewport.getWorldHeight() / 2);
         birdVelocity = 550;
 
         pipes = new ArrayList<>();
         scoreRectangles = new ArrayList<>();
+        pipeRectangles = new ArrayList<>();
 
         createPipes();
 
@@ -322,23 +307,28 @@ public class GameScreen implements Screen {
         float randomPosition = MathUtils.random(minPipesHeight, maxPipesHeight);
         Vector2 pipePosition = new Vector2(game.viewport.getWorldWidth(), randomPosition);
 
-        // Top pipe
+        // Create Top pipe
         pipeSprite = new Sprite(pipeTexture);
         pipeSprite.setBounds(pipePosition.x, pipePosition.y + VERTICAL_PIPE_GAP, pipeTexture.getWidth(),
                 pipeTexture.getHeight());
         pipeSprite.setFlip(false, true);
         pipes.add(pipeSprite);
+        pipeRectangles.add(new Rectangle(pipePosition.x, pipePosition.y + VERTICAL_PIPE_GAP, pipeTexture.getWidth(),
+                pipeTexture.getHeight()));
 
-        // Bottom pipe
+        // Create Bottom pipe
         pipeSprite = new Sprite(pipeTexture);
         pipeSprite.setBounds(pipePosition.x, pipePosition.y - pipeTexture.getHeight() - VERTICAL_PIPE_GAP,
                 pipeTexture.getWidth(),
                 pipeTexture.getHeight());
         pipes.add(pipeSprite);
+        pipeRectangles.add(new Rectangle(pipePosition.x, pipePosition.y - pipeTexture.getHeight() - VERTICAL_PIPE_GAP,
+                pipeTexture.getWidth(),
+                pipeTexture.getHeight()));
 
-        // Score Area
+        // Create Score Area
         scoreRectangles.add(new Rectangle(
-                pipePosition.x + pipeTexture.getWidth() + 20,
+                pipePosition.x + pipeTexture.getWidth() + 15,
                 pipePosition.y - VERTICAL_PIPE_GAP,
                 30,
                 VERTICAL_PIPE_GAP * 2));
@@ -363,13 +353,37 @@ public class GameScreen implements Screen {
     }
 
     private void checkScore() {
-        for (int i = scoreRectangles.size() - 1; i >= 0; i--) {
-            if (birdRectangle.overlaps(scoreRectangles.get(i))) {
-                score++;
-                scoreRectangles.remove(i);
-                pointSound.play();
-            }
+        if (birdRectangle.overlaps(scoreRectangles.get(0))) {
+            score++;
+            scoreRectangles.remove(0);
+            pointSound.play();
         }
+    }
+
+    private void applyBirdPhisics() {
+        birdVelocity -= GRAVITY;
+
+        birdSprite.translateY(birdVelocity * deltaTime);
+        birdSprite.setY(MathUtils.clamp(birdSprite.getY(), 0, game.viewport.getWorldHeight() - birdSprite.getHeight()));
+    }
+
+    private void birdAnimation() {
+        // Bird rotation animation
+        if (birdVelocity > 0) {
+            birdSprite.setRotation(
+                    MathUtils.lerpAngleDeg(birdSprite.getRotation(), 30.0f, (BIRD_ROTATION_SPEED + 25) * deltaTime));
+        } else {
+            birdSprite.setRotation(
+                    MathUtils.lerpAngleDeg(birdSprite.getRotation(), -50.0f, (BIRD_ROTATION_SPEED - 2) * deltaTime));
+        }
+    }
+
+    private void checkCollisions() {
+        for (Rectangle pipeRectangle : pipeRectangles) {
+            checkCollision(pipeRectangle);
+        }
+        checkCollision(groundRectangle);
+        checkScore();
     }
 
     @SuppressWarnings("unused")

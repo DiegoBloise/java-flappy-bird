@@ -375,19 +375,44 @@ public class GameScreen implements Screen {
     @SuppressWarnings("unused")
     private void debug() {
         if (debugMode) {
-            for (Rectangle rect : scoreRectangles) {
-                shape.begin(ShapeType.Filled);
+            shape.begin(ShapeType.Filled);
+
+            // Pipes Collisions
+            for (Rectangle rect : pipeRectangles) {
                 shape.setColor(Color.RED);
                 shape.rect(rect.getX(), rect.getY(), rect.getWidth(),
                         rect.getHeight());
-                shape.end();
             }
 
-            shape.begin(ShapeType.Filled);
-            shape.setColor(Color.GREEN);
+            // Score area
+            for (Rectangle rect : scoreRectangles) {
+                shape.setColor(Color.GREEN);
+                shape.rect(rect.getX(), rect.getY(), rect.getWidth(),
+                        rect.getHeight());
+            }
+
+            // Bird Collision
+            shape.setColor(Color.YELLOW);
             shape.rect(birdRectangle.getX(), birdRectangle.getY(), birdRectangle.getWidth(),
                     birdRectangle.getHeight());
+
+            // Ground Collision
+            shape.setColor(Color.RED);
+            shape.rect(groundRectangle.getX(), groundRectangle.getY(), groundRectangle.getWidth(),
+                    groundRectangle.getHeight());
+
             shape.end();
+
+            // Debug text
+            game.batch.begin();
+            game.font.setColor(Color.WHITE);
+            game.font.getData().setScale(1);
+            game.font.draw(game.batch, "PIPES COLLISIONS: " + pipeRectangles.size(), 0, game.viewport.getWorldHeight());
+            game.font.draw(game.batch, "SCORE AREAS: " + scoreRectangles.size(), 0,
+                    game.viewport.getWorldHeight() - 20);
+            game.font.draw(game.batch, "TOTAL PIPES: " + pipes.size(), 0, game.viewport.getWorldHeight() - 40);
+            game.font.draw(game.batch, "TOTAL GROUNDS: " + grounds.size(), 0, game.viewport.getWorldHeight() - 60);
+            game.batch.end();
         }
     }
 }

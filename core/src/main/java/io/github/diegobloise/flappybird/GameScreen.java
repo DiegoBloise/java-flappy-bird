@@ -10,6 +10,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
@@ -21,18 +22,18 @@ public class GameScreen implements Screen {
 
     final FlappyBird game;
 
-    private final float GRAVITY = 35;
-    private final float FLAP_FORCE = 13 * GRAVITY;
-    private final float FLY_SPEED = -90;
+    private final float GRAVITY = 20;
+    private final float FLAP_FORCE = 14 * GRAVITY;
+    private final float FLY_SPEED = -40;
     private final float BIRD_ROTATION_SPEED = 5;
 
     private float deltaTime;
 
-    private final float BIRD_POSITION_X = 80;
+    private final float BIRD_POSITION_X = 35;
     private float birdVelocity;
 
-    private final int VERTICAL_PIPE_GAP = 50;
-    private final int HORIZONTAL_PIPE_GAP = 150;
+    private final int VERTICAL_PIPE_GAP = 27;
+    private final int HORIZONTAL_PIPE_GAP = 70;
     private final float minPipesHeight;
     private final float maxPipesHeight;
 
@@ -69,28 +70,30 @@ public class GameScreen implements Screen {
         this.game = game;
 
         backgroundTextures = new ArrayList<>();
-        backgroundTextures.add(new Texture(Gdx.files.internal("sprites/background-day.png")));
-        backgroundTextures.add(new Texture(Gdx.files.internal("sprites/background-night.png")));
+        backgroundTextures.add(new Texture(Gdx.files.internal("sprites/background_day.png")));
+        backgroundTextures.add(new Texture(Gdx.files.internal("sprites/background_night.png")));
         backgroundTexture = backgroundTextures.get(0);
 
         birdTextures = new ArrayList<>();
-        birdTextures.add(new Texture(Gdx.files.internal("sprites/yellowbird-midflap.png")));
-        birdTextures.add(new Texture(Gdx.files.internal("sprites/redbird-midflap.png")));
-        birdTextures.add(new Texture(Gdx.files.internal("sprites/bluebird-midflap.png")));
-        birdTexture = birdTextures.get(2);
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/bird_1.png")));
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/bird_2.png")));
+        birdTextures.add(new Texture(Gdx.files.internal("sprites/bird_3.png")));
+        birdTexture = birdTextures.get(0);
 
         pipeTextures = new ArrayList<>();
-        pipeTextures.add(new Texture(Gdx.files.internal("sprites/pipe-green.png")));
-        pipeTextures.add(new Texture(Gdx.files.internal("sprites/pipe-red.png")));
+        pipeTextures.add(new Texture(Gdx.files.internal("sprites/pipe_green.png")));
+        pipeTextures.add(new Texture(Gdx.files.internal("sprites/pipe_red.png")));
         pipeTexture = pipeTextures.get(0);
 
-        groundTexture = new Texture("sprites/base.png");
+        groundTexture = new Texture("sprites/ground.png");
 
-        wingSound = Gdx.audio.newSound(Gdx.files.internal("audio/wing.wav"));
-        hitSound = Gdx.audio.newSound(Gdx.files.internal("audio/hit.wav"));
-        pointSound = Gdx.audio.newSound(Gdx.files.internal("audio/point.wav"));
+        wingSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_wing.wav"));
+        hitSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_hit.wav"));
+        pointSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_point.wav"));
 
-        birdSprite = new Sprite(birdTexture);
+        TextureRegion region = new TextureRegion(birdTexture, 17, birdTexture.getHeight());
+
+        birdSprite = new Sprite(region);
         birdSprite.setX(BIRD_POSITION_X);
         birdSprite.setOriginCenter();
         birdSprite.setOrigin(birdSprite.getOriginX() + 2, birdSprite.getOriginY());
@@ -98,8 +101,8 @@ public class GameScreen implements Screen {
         birdRectangle = new Rectangle();
         groundRectangle = new Rectangle(0, 0, groundTexture.getWidth(), groundTexture.getHeight());
 
-        minPipesHeight = (game.SCREEN_HEIGHT / 2) - 40;
-        maxPipesHeight = (game.SCREEN_HEIGHT / 2) + 150;
+        minPipesHeight = (game.SCREEN_HEIGHT / 2) - 20;
+        maxPipesHeight = (game.SCREEN_HEIGHT / 2) + 70;
 
         shape = new ShapeRenderer();
 
@@ -163,7 +166,7 @@ public class GameScreen implements Screen {
     private void drawBackground() {
         float worldWidth = game.viewport.getWorldWidth();
         float worldHeight = game.viewport.getWorldHeight();
-        game.batch.draw(backgroundTexture, 0, 0, worldWidth, worldHeight);
+        game.batch.draw(backgroundTexture, 0, 10, worldWidth, worldHeight);
     }
 
     private void drawBird() {
@@ -289,9 +292,10 @@ public class GameScreen implements Screen {
         pipeTexture = pipeTextures.get(MathUtils.random(pipeTextures.size() - 1));
         birdTexture = birdTextures.get(MathUtils.random(birdTextures.size() - 1));
 
-        birdSprite.setTexture(birdTexture);
+        TextureRegion region = new TextureRegion(birdTexture, 17, birdTexture.getHeight());
+        birdSprite.setRegion(region);
         birdSprite.setY(game.viewport.getWorldHeight() / 2);
-        birdVelocity = 550;
+        birdVelocity = 250;
 
         pipes = new ArrayList<>();
         scoreRectangles = new ArrayList<>();
@@ -341,7 +345,6 @@ public class GameScreen implements Screen {
         grounds.add(groundSprite);
         groundSprite = new Sprite(groundTexture);
         groundSprite.setX(groundTexture.getWidth() - 2);
-        groundSprite.setY(0);
         grounds.add(groundSprite);
     }
 

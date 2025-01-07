@@ -12,8 +12,8 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
  */
 public class FlappyBird extends Game {
 
-    public final int SCREEN_HEIGHT = 480;
-    public final int SCREEN_WIDTH = 320;
+    public final int SCREEN_WIDTH = 144;
+    public final int SCREEN_HEIGHT = 256;
 
     public SpriteBatch batch;
     public BitmapFont font;

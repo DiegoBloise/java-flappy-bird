@@ -10,6 +10,7 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -256,11 +257,17 @@ public class GameScreen implements Screen {
         drawPipes();
         drawGround();
 
-        game.font.setColor(Color.WHITE);
-        game.font.draw(
-            game.batch, score.toString(),
-            game.viewport.getWorldWidth() / 2,
-                game.viewport.getWorldHeight() - 50);
+        if (isPlaying) {
+            GlyphLayout scoreText = new GlyphLayout();
+            scoreText.setText(game.font, score.toString());
+
+            game.font.setColor(Color.WHITE);
+            game.font.draw(
+                    game.batch,
+                    scoreText,
+                    (game.viewport.getWorldWidth() / 2) - scoreText.width / 2,
+                    game.viewport.getWorldHeight() - 30);
+        }
 
         game.batch.end();
 

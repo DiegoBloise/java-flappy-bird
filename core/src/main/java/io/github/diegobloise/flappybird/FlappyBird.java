@@ -2,6 +2,7 @@ package io.github.diegobloise.flappybird;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
@@ -27,7 +28,12 @@ public class FlappyBird extends Game {
 
         FreeTypeFontGenerator generator = new FreeTypeFontGenerator(Gdx.files.internal("font/nokiafc22.ttf"));
         FreeTypeFontParameter parameter = new FreeTypeFontParameter();
+
         parameter.size = 24;
+        parameter.borderWidth = 1; // Tamanho do contorno
+        parameter.borderColor = Color.BLACK; // Cor do contorno
+        parameter.mono = true;
+
         font = generator.generateFont(parameter);
 
         generator.dispose();

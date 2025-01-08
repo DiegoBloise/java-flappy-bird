@@ -58,6 +58,7 @@ public class GameScreen implements Screen {
 
     private Sound wingSound;
     private Sound hitSound;
+    private Sound dieSound;
     private Sound pointSound;
 
     private Sprite birdSprite;
@@ -76,6 +77,12 @@ public class GameScreen implements Screen {
     private Animation<TextureRegion> birdAnimation;
 
     private boolean isPlaying;
+
+    private boolean gameOver;
+
+    private boolean dieSoundPlayed;
+
+    private boolean birdIsOnGround;
 
     public GameScreen(final FlappyBird game) {
         this.game = game;
@@ -103,6 +110,7 @@ public class GameScreen implements Screen {
 
         wingSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_wing.wav"));
         hitSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_hit.wav"));
+        dieSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_die.wav"));
         pointSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_point.wav"));
 
         initializeBirdAnimations();
@@ -171,8 +179,10 @@ public class GameScreen implements Screen {
         birdTexture.dispose();
         pipeTexture.dispose();
         groundTexture.dispose();
+        tapTexture.dispose();
+        getReadyTexture.dispose();
         wingSound.dispose();
-        hitSound.dispose();
+        dieSound.dispose();
         pointSound.dispose();
     }
 
@@ -213,12 +223,14 @@ public class GameScreen implements Screen {
             if (!isPlaying) {
                 isPlaying = true;
             }
-            if (birdSprite.getY() < worldHeight - 25 && birdSprite.getY() > 0) {
-                // birdVelocity += FLAP_FORCE; += or = ?
-                birdVelocity = FLAP_FORCE;
-                wingSound.play();
-            } else {
-                birdVelocity = 0;
+            if (!gameOver) {
+                if (birdSprite.getY() < worldHeight - 25 && birdSprite.getY() > 0) {
+                    // birdVelocity += FLAP_FORCE; += or = ?
+                    birdVelocity = FLAP_FORCE;
+                    wingSound.play();
+                } else {
+                    birdVelocity = 0;
+                }
             }
         }
 
@@ -235,17 +247,29 @@ public class GameScreen implements Screen {
         deltaTime = Gdx.graphics.getDeltaTime();
 
         if (isPlaying) {
-            pipesHandler();
+            if (!gameOver) {
+                pipesHandler();
+            }
             applyBirdPhisics();
         }
 
-        groundAnimation();
+        if (!gameOver) {
+            groundAnimation();
+        }
+
         birdAnimation();
 
-        if (isPlaying) {
+        if (isPlaying && !gameOver) {
             updateCollisions();
             checkCollisions();
         }
+
+        if (gameOver && birdSprite.getRotation() < 40 && !dieSoundPlayed) {
+            dieSound.play();
+            dieSoundPlayed = true;
+        }
+
+        birdIsOnGround = birdSprite.getY() <= groundRectangle.height;
     }
 
     private void draw() {
@@ -273,6 +297,9 @@ public class GameScreen implements Screen {
                     scoreText,
                     (game.viewport.getWorldWidth() / 2) - scoreText.width / 2,
                     game.viewport.getWorldHeight() - 30);
+        }
+
+        if (gameOver && birdIsOnGround) {
         }
 
         game.batch.end();
@@ -329,6 +356,8 @@ public class GameScreen implements Screen {
     private void resetGame() {
         score = 0;
         isPlaying = false;
+        gameOver = false;
+        dieSoundPlayed = false;
 
         birdStartPosition = new Vector2(35, (game.viewport.getWorldHeight() / 2) + 10);
 
@@ -394,8 +423,10 @@ public class GameScreen implements Screen {
 
     private void checkCollision(Rectangle rectangle) {
         if (birdRectangle.overlaps(rectangle)) {
+            gameOver = true;
             hitSound.play();
-            resetGame();
+
+            // resetGame();
         }
     }
 
@@ -409,9 +440,9 @@ public class GameScreen implements Screen {
 
     private void applyBirdPhisics() {
         birdVelocity -= GRAVITY;
-
         birdSprite.translateY(birdVelocity * deltaTime);
-        birdSprite.setY(MathUtils.clamp(birdSprite.getY(), 0, game.viewport.getWorldHeight() - birdSprite.getHeight()));
+        birdSprite.setY(MathUtils.clamp(birdSprite.getY(), groundRectangle.height - 5,
+                game.viewport.getWorldHeight() - birdSprite.getHeight()));
     }
 
     private void initializeBirdAnimations() {
@@ -430,13 +461,14 @@ public class GameScreen implements Screen {
     }
 
     private void birdAnimation() {
-        // Flap animation
-        animationTime += deltaTime;
-        TextureRegion currentFrame = birdAnimation.getKeyFrame(animationTime);
-        birdSprite.setRegion(currentFrame);
+        if (!gameOver) {
+            // Flap animation
+            animationTime += deltaTime;
+            TextureRegion currentFrame = birdAnimation.getKeyFrame(animationTime);
+            birdSprite.setRegion(currentFrame);
+        }
 
         // Bird rotation animation
-
         if (isPlaying) {
             if (birdVelocity > 0) {
                 birdSprite.setRotation(
@@ -446,6 +478,11 @@ public class GameScreen implements Screen {
                 birdSprite.setRotation(
                         MathUtils.lerpAngleDeg(birdSprite.getRotation(), -50.0f,
                                 (BIRD_ROTATION_SPEED - 2) * deltaTime));
+            }
+            if (gameOver) {
+                birdSprite.setRotation(
+                        MathUtils.lerpAngleDeg(birdSprite.getRotation(), -70.0f,
+                                (BIRD_ROTATION_SPEED + 5) * deltaTime));
             }
         } else {
             time += deltaTime;

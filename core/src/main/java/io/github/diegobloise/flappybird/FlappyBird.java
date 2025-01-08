@@ -39,7 +39,8 @@ public class FlappyBird extends Game {
         generator.dispose();
 
         font.setUseIntegerPositions(false);
-        font.getData().setScale(viewport.getWorldHeight() / Gdx.graphics.getHeight());
+        // font.getData().setScale(viewport.getWorldHeight() /
+        // Gdx.graphics.getHeight());
 
         this.setScreen(new MainMenuScreen(this));
     }

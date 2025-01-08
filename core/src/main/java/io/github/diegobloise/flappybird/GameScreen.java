@@ -255,6 +255,7 @@ public class GameScreen implements Screen {
             if (!isPlaying) {
                 isPlaying = true;
             }
+
             if (!gameOver) {
                 if (birdSprite.getY() < worldHeight - 25 && birdSprite.getY() > 0) {
                     // birdVelocity += FLAP_FORCE; += or = ?
@@ -263,6 +264,10 @@ public class GameScreen implements Screen {
                 } else {
                     birdVelocity = 0;
                 }
+            }
+
+            if (gameOver) {
+                resetGame();
             }
         }
 
@@ -296,7 +301,7 @@ public class GameScreen implements Screen {
             checkCollisions();
         }
 
-        if (gameOver && birdSprite.getRotation() < 40 && !dieSoundPlayed) {
+        if (gameOver && birdSprite.getRotation() < 20 && !dieSoundPlayed) {
             dieSound.play();
             dieSoundPlayed = true;
         }
@@ -315,8 +320,8 @@ public class GameScreen implements Screen {
         if (!isPlaying) {
             drawTap();
         }
-        drawBird();
         drawPipes();
+        drawBird();
         drawGround();
 
         if (isPlaying && !gameOver) {
@@ -518,8 +523,13 @@ public class GameScreen implements Screen {
                                 (BIRD_ROTATION_SPEED + 5) * deltaTime));
             }
         } else {
+            // time += deltaTime;
+            // float floatingOffset = (float) Math.sin(time * 2) * 5;
+            // float baseY = (game.viewport.getWorldHeight() / 2) + 10 -
+            // birdSprite.getHeight() / 2f;
+            // birdSprite.setY(baseY + floatingOffset);
             time += deltaTime;
-            float floatingOffset = (float) Math.sin(time * 2) * 5;
+            float floatingOffset = (float) Math.sin(time * 7) * 2;
             float baseY = (game.viewport.getWorldHeight() / 2) + 10 - birdSprite.getHeight() / 2f;
             birdSprite.setY(baseY + floatingOffset);
         }

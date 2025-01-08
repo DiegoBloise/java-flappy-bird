@@ -266,7 +266,7 @@ public class GameScreen implements Screen {
                 }
             }
 
-            if (gameOver) {
+            if (gameOver && birdIsOnGround) {
                 resetGame();
             }
         }

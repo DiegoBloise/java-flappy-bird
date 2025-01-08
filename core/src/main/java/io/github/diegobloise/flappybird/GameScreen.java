@@ -55,6 +55,10 @@ public class GameScreen implements Screen {
     private Texture pipeTexture;
     private Texture tapTexture;
     private Texture getReadyTexture;
+    private Texture scoreTexture;
+    private Texture gameOverTexture;
+    private Texture btnPlayTexture;
+    private Texture btnHighscoresTexture;
 
     private Sound wingSound;
     private Sound hitSound;
@@ -107,6 +111,10 @@ public class GameScreen implements Screen {
 
         tapTexture = new Texture("sprites/tap.png");
         getReadyTexture = new Texture("sprites/get_ready.png");
+        scoreTexture = new Texture("sprites/score.png");
+        gameOverTexture = new Texture("sprites/game_over.png");
+        btnPlayTexture = new Texture("sprites/btn_play.png");
+        btnHighscoresTexture = new Texture("sprites/btn_highscores.png");
 
         wingSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_wing.wav"));
         hitSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_hit.wav"));
@@ -181,6 +189,10 @@ public class GameScreen implements Screen {
         groundTexture.dispose();
         tapTexture.dispose();
         getReadyTexture.dispose();
+        gameOverTexture.dispose();
+        btnPlayTexture.dispose();
+        btnHighscoresTexture.dispose();
+
         wingSound.dispose();
         dieSound.dispose();
         pointSound.dispose();
@@ -215,6 +227,26 @@ public class GameScreen implements Screen {
         for (Sprite ground : grounds) {
             ground.draw(game.batch);
         }
+    }
+
+    private void drawGameOverScreen() {
+        game.batch.draw(
+                gameOverTexture,
+                (game.viewport.getWorldWidth() / 2) - gameOverTexture.getWidth() / 2,
+                (game.viewport.getWorldHeight() / 2) - gameOverTexture.getHeight() / 2 + tapTexture.getHeight());
+        game.batch.draw(
+                scoreTexture,
+                (game.viewport.getWorldWidth() / 2) - scoreTexture.getWidth() / 2,
+                (game.viewport.getWorldHeight() / 2) - scoreTexture.getHeight() / 2);
+        game.batch.draw(
+                btnPlayTexture,
+                (game.viewport.getWorldWidth() / 2) - btnPlayTexture.getWidth() - 7,
+                (game.viewport.getWorldHeight() / 2) - btnPlayTexture.getHeight() / 2 - scoreTexture.getHeight() + 5);
+        game.batch.draw(
+                btnHighscoresTexture,
+                (game.viewport.getWorldWidth() / 2) + 7,
+                (game.viewport.getWorldHeight() / 2) - btnHighscoresTexture.getHeight() / 2 - scoreTexture.getHeight()
+                        + 5);
     }
 
     private void input() {
@@ -287,7 +319,7 @@ public class GameScreen implements Screen {
         drawPipes();
         drawGround();
 
-        if (isPlaying) {
+        if (isPlaying && !gameOver) {
             GlyphLayout scoreText = new GlyphLayout();
             scoreText.setText(game.font, score.toString());
 
@@ -300,6 +332,7 @@ public class GameScreen implements Screen {
         }
 
         if (gameOver && birdIsOnGround) {
+            drawGameOverScreen();
         }
 
         game.batch.end();

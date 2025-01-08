@@ -54,6 +54,7 @@ public class GameScreen implements Screen {
     private Texture birdTexture;
     private Texture pipeTexture;
     private Texture tapTexture;
+    private Texture getReadyTexture;
 
     private Sound wingSound;
     private Sound hitSound;
@@ -98,6 +99,7 @@ public class GameScreen implements Screen {
         groundTexture = new Texture("sprites/ground.png");
 
         tapTexture = new Texture("sprites/tap.png");
+        getReadyTexture = new Texture("sprites/get_ready.png");
 
         wingSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_wing.wav"));
         hitSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_hit.wav"));
@@ -179,6 +181,10 @@ public class GameScreen implements Screen {
     }
 
     private void drawTap() {
+        game.batch.draw(
+                getReadyTexture,
+                (game.viewport.getWorldWidth() / 2) - getReadyTexture.getWidth() / 2,
+                (game.viewport.getWorldHeight() / 2) - getReadyTexture.getHeight() / 2 + tapTexture.getHeight());
         game.batch.draw(
                 tapTexture,
                 (game.viewport.getWorldWidth() / 2) - tapTexture.getWidth() / 2,

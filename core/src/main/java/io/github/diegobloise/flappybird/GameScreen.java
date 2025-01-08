@@ -23,7 +23,7 @@ public class GameScreen implements Screen {
     final FlappyBird game;
 
     private final float GRAVITY = 18;
-    private final float FLAP_FORCE = 12 * GRAVITY;
+    private final float FLAP_FORCE = 14 * GRAVITY;
     private final float FLY_SPEED = -40;
     private final float BIRD_ROTATION_SPEED = 5;
 

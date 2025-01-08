@@ -9,6 +9,7 @@ import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -28,8 +29,9 @@ public class GameScreen implements Screen {
     private final float BIRD_ROTATION_SPEED = 5;
 
     private float deltaTime;
+    private float time;
 
-    private final float BIRD_POSITION_X = 35;
+    private Vector2 birdStartPosition;
     private float birdVelocity;
 
     private final int VERTICAL_PIPE_GAP = 27;
@@ -50,6 +52,7 @@ public class GameScreen implements Screen {
     private Texture groundTexture;
     private Texture birdTexture;
     private Texture pipeTexture;
+    private Texture tapTexture;
 
     private Sound wingSound;
     private Sound hitSound;
@@ -65,6 +68,12 @@ public class GameScreen implements Screen {
     private ShapeRenderer shape;
 
     private Boolean debugMode;
+
+    private static final int QUANTITY_OF_FRAMES = 4;
+    private float animationTime;
+    private Animation<TextureRegion> birdAnimation;
+
+    private boolean isPlaying;
 
     public GameScreen(final FlappyBird game) {
         this.game = game;
@@ -87,22 +96,23 @@ public class GameScreen implements Screen {
 
         groundTexture = new Texture("sprites/ground.png");
 
+        tapTexture = new Texture("sprites/tap.png");
+
         wingSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_wing.wav"));
         hitSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_hit.wav"));
         pointSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_point.wav"));
 
-        TextureRegion region = new TextureRegion(birdTexture, 17, birdTexture.getHeight());
-
-        birdSprite = new Sprite(region);
-        birdSprite.setX(BIRD_POSITION_X);
+        initializeBirdAnimations();
+        TextureRegion currentFrame = birdAnimation.getKeyFrame(animationTime);
+        birdSprite = new Sprite(currentFrame);
         birdSprite.setOriginCenter();
         birdSprite.setOrigin(birdSprite.getOriginX() + 2, birdSprite.getOriginY());
 
         birdRectangle = new Rectangle();
         groundRectangle = new Rectangle(0, 0, groundTexture.getWidth(), groundTexture.getHeight());
 
-        minPipesHeight = (game.SCREEN_HEIGHT / 2) - 20;
-        maxPipesHeight = (game.SCREEN_HEIGHT / 2) + 70;
+        minPipesHeight = (game.viewport.getWorldHeight() / 2) - 20;
+        maxPipesHeight = (game.viewport.getWorldHeight() / 2) + 70;
 
         shape = new ShapeRenderer();
 
@@ -164,9 +174,14 @@ public class GameScreen implements Screen {
     }
 
     private void drawBackground() {
-        float worldWidth = game.viewport.getWorldWidth();
-        float worldHeight = game.viewport.getWorldHeight();
-        game.batch.draw(backgroundTexture, 0, 10, worldWidth, worldHeight);
+        game.batch.draw(backgroundTexture, 0, 10, game.viewport.getWorldWidth(), game.viewport.getWorldHeight());
+    }
+
+    private void drawTap() {
+        game.batch.draw(
+                tapTexture,
+                (game.viewport.getWorldWidth() / 2) - tapTexture.getWidth() / 2,
+                (game.viewport.getWorldHeight() / 2) - tapTexture.getHeight() / 2);
     }
 
     private void drawBird() {
@@ -188,6 +203,9 @@ public class GameScreen implements Screen {
     private void input() {
         float worldHeight = game.viewport.getWorldHeight();
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.justTouched()) {
+            if (!isPlaying) {
+                isPlaying = true;
+            }
             if (birdSprite.getY() < worldHeight - 25 && birdSprite.getY() > 0) {
                 // birdVelocity += FLAP_FORCE; += or = ?
                 birdVelocity = FLAP_FORCE;
@@ -209,14 +227,18 @@ public class GameScreen implements Screen {
     private void logic() {
         deltaTime = Gdx.graphics.getDeltaTime();
 
-        pipesHandler();
-        applyBirdPhisics();
+        if (isPlaying) {
+            pipesHandler();
+            applyBirdPhisics();
+        }
 
         groundAnimation();
         birdAnimation();
 
-        updateCollisions();
-        checkCollisions();
+        if (isPlaying) {
+            updateCollisions();
+            checkCollisions();
+        }
     }
 
     private void draw() {
@@ -227,12 +249,17 @@ public class GameScreen implements Screen {
         game.batch.begin();
 
         drawBackground();
+        if (!isPlaying) {
+            drawTap();
+        }
         drawBird();
         drawPipes();
         drawGround();
 
         game.font.setColor(Color.WHITE);
-        game.font.draw(game.batch, score.toString(), game.viewport.getWorldWidth() / 2,
+        game.font.draw(
+            game.batch, score.toString(),
+            game.viewport.getWorldWidth() / 2,
                 game.viewport.getWorldHeight() - 50);
 
         game.batch.end();
@@ -287,22 +314,27 @@ public class GameScreen implements Screen {
     }
 
     private void resetGame() {
+        score = 0;
+        isPlaying = false;
+
+        birdStartPosition = new Vector2(35, (game.viewport.getWorldHeight() / 2) + 10);
+
         backgroundTexture = backgroundTextures.get(MathUtils.random(backgroundTextures.size() - 1));
         pipeTexture = pipeTextures.get(MathUtils.random(pipeTextures.size() - 1));
         birdTexture = birdTextures.get(MathUtils.random(birdTextures.size() - 1));
 
-        TextureRegion region = new TextureRegion(birdTexture, 17, birdTexture.getHeight());
-        birdSprite.setRegion(region);
-        birdSprite.setY(game.viewport.getWorldHeight() / 2);
-        birdVelocity = 250;
+        initializeBirdAnimations();
+
+        birdSprite.setRegion(birdAnimation.getKeyFrame(0)); // Define o primeiro quadro
+        birdSprite.setPosition(birdStartPosition.x, birdStartPosition.y);
+        birdSprite.setRotation(0);
+        birdVelocity = 0;
 
         pipes = new ArrayList<>();
         scoreRectangles = new ArrayList<>();
         pipeRectangles = new ArrayList<>();
 
         createPipes();
-
-        score = 0;
     }
 
     private void createPipes() {
@@ -369,14 +401,44 @@ public class GameScreen implements Screen {
         birdSprite.setY(MathUtils.clamp(birdSprite.getY(), 0, game.viewport.getWorldHeight() - birdSprite.getHeight()));
     }
 
+    private void initializeBirdAnimations() {
+        Texture birdSheet = birdTextures.get(MathUtils.random(birdTextures.size() - 1));
+
+        int frameWidth = birdSheet.getWidth() / QUANTITY_OF_FRAMES;
+        int frameHeight = birdSheet.getHeight();
+        TextureRegion[][] regions = TextureRegion.split(birdSheet, frameWidth, frameHeight);
+
+        TextureRegion[] frames = regions[0];
+
+        birdAnimation = new Animation<>(0.1f, frames);
+        birdAnimation.setPlayMode(Animation.PlayMode.LOOP);
+
+        animationTime = 0;
+    }
+
     private void birdAnimation() {
+        // Flap animation
+        animationTime += deltaTime;
+        TextureRegion currentFrame = birdAnimation.getKeyFrame(animationTime);
+        birdSprite.setRegion(currentFrame);
+
         // Bird rotation animation
-        if (birdVelocity > 0) {
-            birdSprite.setRotation(
-                    MathUtils.lerpAngleDeg(birdSprite.getRotation(), 30.0f, (BIRD_ROTATION_SPEED + 25) * deltaTime));
+
+        if (isPlaying) {
+            if (birdVelocity > 0) {
+                birdSprite.setRotation(
+                        MathUtils.lerpAngleDeg(birdSprite.getRotation(), 30.0f,
+                                (BIRD_ROTATION_SPEED + 25) * deltaTime));
+            } else {
+                birdSprite.setRotation(
+                        MathUtils.lerpAngleDeg(birdSprite.getRotation(), -50.0f,
+                                (BIRD_ROTATION_SPEED - 2) * deltaTime));
+            }
         } else {
-            birdSprite.setRotation(
-                    MathUtils.lerpAngleDeg(birdSprite.getRotation(), -50.0f, (BIRD_ROTATION_SPEED - 2) * deltaTime));
+            time += deltaTime;
+            float floatingOffset = (float) Math.sin(time * 2) * 5;
+            float baseY = (game.viewport.getWorldHeight() / 2) + 10 - birdSprite.getHeight() / 2f;
+            birdSprite.setY(baseY + floatingOffset);
         }
     }
 

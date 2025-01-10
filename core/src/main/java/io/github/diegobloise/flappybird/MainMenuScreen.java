@@ -1,8 +1,5 @@
 package io.github.diegobloise.flappybird;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
@@ -32,7 +29,7 @@ public class MainMenuScreen implements Screen {
     private Animation<TextureRegion> birdAnimation;
     private float animationTime;
 
-    private List<Sprite> grounds;
+    private Sprite groundSprite;
 
     private Sprite birdSprite;
 
@@ -61,13 +58,7 @@ public class MainMenuScreen implements Screen {
         birdSprite.setPosition(birdStartPosition.x - birdSprite.getWidth() / 2,
                 birdStartPosition.y - birdSprite.getHeight() / 2);
 
-        grounds = new ArrayList<>();
-        Sprite groundSprite;
         groundSprite = new Sprite(groundTexture);
-        grounds.add(groundSprite);
-        groundSprite = new Sprite(groundTexture);
-        groundSprite.setX(groundTexture.getWidth() - 2);
-        grounds.add(groundSprite);
     }
 
     public void show() {
@@ -89,20 +80,16 @@ public class MainMenuScreen implements Screen {
         float baseY = (game.viewport.getWorldHeight() / 2 + 7) + 10 - birdSprite.getHeight() / 2f;
         birdSprite.setY(baseY + floatingOffset);
 
-        for (Sprite ground : grounds) {
-            ground.translateX(FLY_SPEED * deltaTime);
-            if (ground.getX() < -groundTexture.getWidth()) {
-                ground.setX(groundTexture.getWidth() - 4);
-            }
+        groundSprite.translateX(FLY_SPEED * deltaTime);
+        if (groundSprite.getX() + groundSprite.getWidth() < game.viewport.getWorldWidth()) {
+            groundSprite.setX(0);
         }
 
         game.batch.begin();
 
         game.batch.draw(bootSplashTexture, 0, 10, game.viewport.getWorldWidth(), game.viewport.getWorldHeight());
         birdSprite.draw(game.batch);
-        for (Sprite ground : grounds) {
-            ground.draw(game.batch);
-        }
+        groundSprite.draw(game.batch);
 
         game.batch.draw(
                 btnPlayTexture,

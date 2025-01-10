@@ -41,7 +41,6 @@ public class GameScreen implements Screen {
     private final float maxPipesHeight;
 
     private List<Sprite> pipes;
-    private List<Sprite> grounds;
     private List<Rectangle> scoreRectangles;
     private List<Rectangle> pipeRectangles;
 
@@ -66,6 +65,7 @@ public class GameScreen implements Screen {
     private Sound pointSound;
 
     private Sprite birdSprite;
+    private Sprite groundSprite;
 
     private Rectangle birdRectangle;
     private Rectangle groundRectangle;
@@ -108,6 +108,7 @@ public class GameScreen implements Screen {
         pipeTexture = pipeTextures.get(0);
 
         groundTexture = new Texture("sprites/ground.png");
+        groundSprite = new Sprite(groundTexture);
 
         tapTexture = new Texture("sprites/tap.png");
         getReadyTexture = new Texture("sprites/get_ready.png");
@@ -136,8 +137,6 @@ public class GameScreen implements Screen {
         shape = new ShapeRenderer();
 
         debugMode = false;
-
-        createGround();
 
         resetGame();
     }
@@ -224,9 +223,7 @@ public class GameScreen implements Screen {
     }
 
     private void drawGround() {
-        for (Sprite ground : grounds) {
-            ground.draw(game.batch);
-        }
+        groundSprite.draw(game.batch);
     }
 
     private void drawGameOverScreen() {
@@ -364,13 +361,9 @@ public class GameScreen implements Screen {
     }
 
     private void groundAnimation() {
-        for (Sprite ground : grounds) {
-            ground.translateX(FLY_SPEED * deltaTime);
-
-            // Move ground to front
-            if (ground.getX() < -groundTexture.getWidth()) {
-                ground.setX(groundTexture.getWidth() - 4);
-            }
+        groundSprite.translateX(FLY_SPEED * deltaTime);
+        if (groundSprite.getX() + groundSprite.getWidth() < game.viewport.getWorldWidth()) {
+            groundSprite.setX(0);
         }
     }
 
@@ -449,22 +442,10 @@ public class GameScreen implements Screen {
                 VERTICAL_PIPE_GAP * 3));
     }
 
-    private void createGround() {
-        grounds = new ArrayList<>();
-        Sprite groundSprite;
-        groundSprite = new Sprite(groundTexture);
-        grounds.add(groundSprite);
-        groundSprite = new Sprite(groundTexture);
-        groundSprite.setX(groundTexture.getWidth() - 2);
-        grounds.add(groundSprite);
-    }
-
     private void checkCollision(Rectangle rectangle) {
         if (birdRectangle.overlaps(rectangle)) {
             gameOver = true;
             hitSound.play();
-
-            // resetGame();
         }
     }
 
@@ -581,7 +562,6 @@ public class GameScreen implements Screen {
             game.font.draw(game.batch, "SCORE AREAS: " + scoreRectangles.size(), 0,
                     game.viewport.getWorldHeight() - 10);
             game.font.draw(game.batch, "TOTAL PIPES: " + pipes.size(), 0, game.viewport.getWorldHeight() - 20);
-            game.font.draw(game.batch, "TOTAL GROUNDS: " + grounds.size(), 0, game.viewport.getWorldHeight() - 30);
             game.batch.end();
         }
     }

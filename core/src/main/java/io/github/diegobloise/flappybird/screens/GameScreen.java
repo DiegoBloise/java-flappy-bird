@@ -1,4 +1,4 @@
-package io.github.diegobloise.flappybird;
+package io.github.diegobloise.flappybird.screens;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +15,11 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.ScreenUtils;
+
+import io.github.diegobloise.flappybird.FlappyBird;
+import io.github.diegobloise.flappybird.entities.Bird;
+import io.github.diegobloise.flappybird.entities.Ground;
+import io.github.diegobloise.flappybird.entities.Pipe;
 
 public class GameScreen implements Screen {
 

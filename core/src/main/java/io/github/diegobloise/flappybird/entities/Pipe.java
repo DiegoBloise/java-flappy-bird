@@ -1,4 +1,4 @@
-package io.github.diegobloise.flappybird;
+package io.github.diegobloise.flappybird.entities;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,6 +9,8 @@ import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+
+import io.github.diegobloise.flappybird.FlappyBird;
 
 public class Pipe {
     private final int VERTICAL_PIPE_GAP = 27;
@@ -26,7 +28,7 @@ public class Pipe {
     private List<Texture> pipeTextures;
     private Texture pipeTexture;
 
-    Pipe(FlappyBird game) {
+    public Pipe(FlappyBird game) {
         this.game = game;
 
         pipeTextures = new ArrayList<>();

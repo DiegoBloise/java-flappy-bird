@@ -1,8 +1,10 @@
-package io.github.diegobloise.flappybird;
+package io.github.diegobloise.flappybird.entities;
 
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.math.Rectangle;
+
+import io.github.diegobloise.flappybird.FlappyBird;
 
 public class Ground {
     final FlappyBird game;
@@ -12,7 +14,7 @@ public class Ground {
 
     private Rectangle groundRectangle;
 
-    Ground(FlappyBird game) {
+    public Ground(FlappyBird game) {
         this.game = game;
         groundTexture = new Texture("sprites/ground.png");
         groundSprite = new Sprite(groundTexture);

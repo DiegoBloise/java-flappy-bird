@@ -9,6 +9,8 @@ import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 
+import io.github.diegobloise.flappybird.screens.MainMenuScreen;
+
 /**
  * {@link com.badlogic.gdx.ApplicationListener} implementation shared by all
  * platforms.
@@ -30,8 +32,8 @@ public class FlappyBird extends Game {
         FreeTypeFontParameter parameter = new FreeTypeFontParameter();
 
         parameter.size = 24;
-        parameter.borderWidth = 1; // Tamanho do contorno
-        parameter.borderColor = Color.BLACK; // Cor do contorno
+        parameter.borderWidth = 1;
+        parameter.borderColor = Color.BLACK;
         parameter.mono = true;
 
         font = generator.generateFont(parameter);

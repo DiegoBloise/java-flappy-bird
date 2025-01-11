@@ -1,4 +1,4 @@
-package io.github.diegobloise.flappybird;
+package io.github.diegobloise.flappybird.entities;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+
+import io.github.diegobloise.flappybird.FlappyBird;
 
 public class Bird {
 
@@ -38,7 +40,7 @@ public class Bird {
     private float animationTime;
     private Animation<TextureRegion> birdAnimation;
 
-    Bird(FlappyBird game) {
+    public Bird(FlappyBird game) {
         this.game = game;
 
         textures = new ArrayList<>();

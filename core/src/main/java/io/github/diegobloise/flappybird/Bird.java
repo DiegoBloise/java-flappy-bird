@@ -18,7 +18,6 @@ public class Bird {
 
     public static final float GRAVITY = 18;
     public final float FLAP_FORCE = 14 * GRAVITY;
-    public final float FLY_SPEED = -40;
     public final float ROTATION_SPEED = 5;
 
     private float time;
@@ -63,6 +62,17 @@ public class Bird {
         rectangle = new Rectangle();
     }
 
+    public void draw() {
+        sprite.draw(game.batch);
+    }
+
+    public void dispose() {
+        for (Texture texture : textures) {
+            texture.dispose();
+        }
+        texture.dispose();
+    }
+
     private void initializeBirdAnimations() {
         Texture birdSheet = textures.get(MathUtils.random(textures.size() - 1));
 
@@ -78,19 +88,62 @@ public class Bird {
         animationTime = 0;
     }
 
-    public void draw() {
-        sprite.draw(game.batch);
-    }
-
-    public void dispose() {
-        for (Texture texture : textures) {
-            texture.dispose();
-        }
-        texture.dispose();
-    }
-
     public void flap() {
         this.velocity = FLAP_FORCE;
+    }
+
+    public void updateCollision() {
+        rectangle.set(
+                sprite.getX() + sprite.getWidth() / 2,
+                sprite.getY() + sprite.getHeight() / 2,
+                sprite.getHeight() - 5,
+                sprite.getHeight() - 5);
+        rectangle.setCenter(sprite.getX() + sprite.getWidth() / 2,
+                sprite.getY() + sprite.getHeight() / 2);
+    }
+
+    public void applyPhisics(Rectangle groundRectangle, float deltaTime) {
+        velocity -= GRAVITY;
+        sprite.translateY(velocity * deltaTime);
+        sprite.setY(MathUtils.clamp(sprite.getY(), groundRectangle.height - 5,
+                game.viewport.getWorldHeight() - sprite.getHeight()));
+    }
+
+    public void playAnimation(boolean gameOver, boolean isPlaying, float deltaTime) {
+        if (!gameOver) {
+            // Flap animation
+            animationTime += deltaTime;
+            TextureRegion currentFrame = birdAnimation.getKeyFrame(animationTime);
+            sprite.setRegion(currentFrame);
+        }
+
+        // Bird rotation animation
+        if (isPlaying) {
+            if (velocity > 0) {
+                sprite.setRotation(
+                        MathUtils.lerpAngleDeg(sprite.getRotation(), 30.0f,
+                                (ROTATION_SPEED + 25) * deltaTime));
+            } else {
+                sprite.setRotation(
+                        MathUtils.lerpAngleDeg(sprite.getRotation(), -50.0f,
+                                (ROTATION_SPEED - 2) * deltaTime));
+            }
+            if (gameOver) {
+                sprite.setRotation(
+                        MathUtils.lerpAngleDeg(sprite.getRotation(), -70.0f,
+                                (ROTATION_SPEED + 5) * deltaTime));
+            }
+        } else {
+            // time += deltaTime;
+            // float floatingOffset = (float) Math.sin(time * 2) * 5;
+            // float baseY = (game.viewport.getWorldHeight() / 2) + 10 -
+            // birdSprite.getHeight() / 2f;
+            // birdSprite.setY(baseY + floatingOffset);
+            time += deltaTime;
+            float floatingOffset = (float) Math.sin(time * 7) * 2;
+            float baseY = (game.viewport.getWorldHeight() / 2) + 10 - sprite.getHeight() / 2f;
+            sprite.setY(baseY + floatingOffset);
+        }
     }
 
     public Vector2 getStartPosition() {
@@ -131,59 +184,5 @@ public class Bird {
 
     public void setAnimationTime(float animationTime) {
         this.animationTime = animationTime;
-    }
-
-    public void updateCollision() {
-        rectangle.set(
-                sprite.getX() + sprite.getWidth() / 2,
-                sprite.getY() + sprite.getHeight() / 2,
-                sprite.getHeight() - 5,
-                sprite.getHeight() - 5);
-        rectangle.setCenter(sprite.getX() + sprite.getWidth() / 2,
-                sprite.getY() + sprite.getHeight() / 2);
-    }
-
-    public void applyBirdPhisics(Rectangle groundRectangle, float deltaTime) {
-        velocity -= GRAVITY;
-        sprite.translateY(velocity * deltaTime);
-        sprite.setY(MathUtils.clamp(sprite.getY(), groundRectangle.height - 5,
-                game.viewport.getWorldHeight() - sprite.getHeight()));
-    }
-
-    public void birdAnimation(boolean gameOver, boolean isPlaying, float deltaTime) {
-        if (!gameOver) {
-            // Flap animation
-            animationTime += deltaTime;
-            TextureRegion currentFrame = birdAnimation.getKeyFrame(animationTime);
-            sprite.setRegion(currentFrame);
-        }
-
-        // Bird rotation animation
-        if (isPlaying) {
-            if (velocity > 0) {
-                sprite.setRotation(
-                        MathUtils.lerpAngleDeg(sprite.getRotation(), 30.0f,
-                                (ROTATION_SPEED + 25) * deltaTime));
-            } else {
-                sprite.setRotation(
-                        MathUtils.lerpAngleDeg(sprite.getRotation(), -50.0f,
-                                (ROTATION_SPEED - 2) * deltaTime));
-            }
-            if (gameOver) {
-                sprite.setRotation(
-                        MathUtils.lerpAngleDeg(sprite.getRotation(), -70.0f,
-                                (ROTATION_SPEED + 5) * deltaTime));
-            }
-        } else {
-            // time += deltaTime;
-            // float floatingOffset = (float) Math.sin(time * 2) * 5;
-            // float baseY = (game.viewport.getWorldHeight() / 2) + 10 -
-            // birdSprite.getHeight() / 2f;
-            // birdSprite.setY(baseY + floatingOffset);
-            time += deltaTime;
-            float floatingOffset = (float) Math.sin(time * 7) * 2;
-            float baseY = (game.viewport.getWorldHeight() / 2) + 10 - sprite.getHeight() / 2f;
-            sprite.setY(baseY + floatingOffset);
-        }
     }
 }

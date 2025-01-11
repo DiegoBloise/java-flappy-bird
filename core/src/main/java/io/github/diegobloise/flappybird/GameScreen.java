@@ -10,7 +10,6 @@ import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
-import com.badlogic.gdx.graphics.g2d.Sprite;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.MathUtils;
@@ -23,14 +22,16 @@ public class GameScreen implements Screen {
 
     private Bird bird;
 
+    private final float GAME_SPEED = -40;
+
     private Pipe pipe;
+    private Ground ground;
 
     private float deltaTime;
 
     private List<Texture> backgroundTextures;
 
     private Texture backgroundTexture;
-    private Texture groundTexture;
 
     private Texture tapTexture;
     private Texture getReadyTexture;
@@ -43,10 +44,6 @@ public class GameScreen implements Screen {
     private Sound hitSound;
     private Sound dieSound;
     private Sound pointSound;
-
-    private Sprite groundSprite;
-
-    private Rectangle groundRectangle;
 
     private Integer score;
 
@@ -70,9 +67,6 @@ public class GameScreen implements Screen {
         backgroundTextures.add(new Texture(Gdx.files.internal("sprites/background_night.png")));
         backgroundTexture = backgroundTextures.get(0);
 
-        groundTexture = new Texture("sprites/ground.png");
-        groundSprite = new Sprite(groundTexture);
-
         tapTexture = new Texture("sprites/tap.png");
         getReadyTexture = new Texture("sprites/get_ready.png");
         scoreTexture = new Texture("sprites/score.png");
@@ -84,8 +78,6 @@ public class GameScreen implements Screen {
         hitSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_hit.wav"));
         dieSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_die.wav"));
         pointSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_point.wav"));
-
-        groundRectangle = new Rectangle(0, 0, groundTexture.getWidth(), groundTexture.getHeight());
 
         shape = new ShapeRenderer();
 
@@ -135,7 +127,8 @@ public class GameScreen implements Screen {
 
         backgroundTexture.dispose();
 
-        groundTexture.dispose();
+        ground.dispose();
+
         tapTexture.dispose();
         getReadyTexture.dispose();
         gameOverTexture.dispose();
@@ -151,7 +144,7 @@ public class GameScreen implements Screen {
         game.batch.draw(backgroundTexture, 0, 10, game.viewport.getWorldWidth(), game.viewport.getWorldHeight());
     }
 
-    private void drawTap() {
+    private void drawGetReady() {
         game.batch.draw(
                 getReadyTexture,
                 (game.viewport.getWorldWidth() / 2) - getReadyTexture.getWidth() / 2,
@@ -160,18 +153,6 @@ public class GameScreen implements Screen {
                 tapTexture,
                 (game.viewport.getWorldWidth() / 2) - tapTexture.getWidth() / 2,
                 (game.viewport.getWorldHeight() / 2) - tapTexture.getHeight() / 2);
-    }
-
-    private void drawBird() {
-        bird.draw();
-    }
-
-    private void drawPipes() {
-        pipe.draw();
-    }
-
-    private void drawGround() {
-        groundSprite.draw(game.batch);
     }
 
     private void drawGameOverScreen() {
@@ -230,16 +211,16 @@ public class GameScreen implements Screen {
 
         if (isPlaying) {
             if (!gameOver) {
-                pipe.pipesHandler(bird, deltaTime);
+                pipe.update(GAME_SPEED, deltaTime);
             }
-            bird.applyBirdPhisics(groundRectangle, deltaTime);
+            bird.applyPhisics(ground.getGroundRectangle(), deltaTime);
         }
 
         if (!gameOver) {
-            groundAnimation();
+            ground.playAnimation(GAME_SPEED, deltaTime);
         }
 
-        bird.birdAnimation(gameOver, isPlaying, deltaTime);
+        bird.playAnimation(gameOver, isPlaying, deltaTime);
 
         if (isPlaying && !gameOver) {
             updateCollisions();
@@ -251,7 +232,7 @@ public class GameScreen implements Screen {
             dieSoundPlayed = true;
         }
 
-        birdIsOnGround = bird.getSprite().getY() <= groundRectangle.height;
+        birdIsOnGround = bird.getSprite().getY() <= ground.getGroundRectangle().height;
     }
 
     private void draw() {
@@ -263,11 +244,11 @@ public class GameScreen implements Screen {
 
         drawBackground();
         if (!isPlaying) {
-            drawTap();
+            drawGetReady();
         }
-        drawPipes();
-        drawBird();
-        drawGround();
+        pipe.draw();
+        bird.draw();
+        ground.draw();
 
         if (isPlaying && !gameOver) {
             GlyphLayout scoreText = new GlyphLayout();
@@ -290,21 +271,10 @@ public class GameScreen implements Screen {
         debug();
     }
 
-    private void groundAnimation() {
-        groundSprite.translateX(bird.FLY_SPEED * deltaTime);
-        if (groundSprite.getX() + groundSprite.getWidth() < game.viewport.getWorldWidth()) {
-            groundSprite.setX(0);
-        }
-    }
-
-    private void updateCollisions() {
-        pipe.updateCollisions(bird, deltaTime);
-        bird.updateCollision();
-    }
-
     private void resetGame() {
         bird = new Bird(this.game);
         pipe = new Pipe(this.game);
+        ground = new Ground(this.game);
 
         score = 0;
         isPlaying = false;
@@ -312,7 +282,11 @@ public class GameScreen implements Screen {
         dieSoundPlayed = false;
 
         backgroundTexture = backgroundTextures.get(MathUtils.random(backgroundTextures.size() - 1));
+    }
 
+    private void updateCollisions() {
+        pipe.updateCollisions(GAME_SPEED, deltaTime);
+        bird.updateCollision();
     }
 
     private void checkCollision(Rectangle rectangle) {
@@ -322,20 +296,20 @@ public class GameScreen implements Screen {
         }
     }
 
+    private void checkCollisions() {
+        for (Rectangle pipeRectangle : pipe.getPipeRectangles()) {
+            checkCollision(pipeRectangle);
+        }
+        checkCollision(ground.getGroundRectangle());
+        checkScore();
+    }
+
     private void checkScore() {
         if (bird.getRectangle().overlaps(pipe.getScoreRectangles().get(0))) {
             score++;
             pipe.getScoreRectangles().remove(0);
             pointSound.play();
         }
-    }
-
-    private void checkCollisions() {
-        for (Rectangle pipeRectangle : pipe.getPipeRectangles()) {
-            checkCollision(pipeRectangle);
-        }
-        checkCollision(groundRectangle);
-        checkScore();
     }
 
     @SuppressWarnings("unused")
@@ -364,8 +338,9 @@ public class GameScreen implements Screen {
 
             // Ground Collision
             shape.setColor(Color.RED);
-            shape.rect(groundRectangle.getX(), groundRectangle.getY(), groundRectangle.getWidth(),
-                    groundRectangle.getHeight());
+            shape.rect(ground.getGroundRectangle().getX(), ground.getGroundRectangle().getY(),
+                    ground.getGroundRectangle().getWidth(),
+                    ground.getGroundRectangle().getHeight());
 
             shape.end();
 

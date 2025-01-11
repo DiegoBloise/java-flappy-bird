@@ -12,6 +12,7 @@ import com.badlogic.gdx.math.Vector2;
 
 public class Pipe {
     private final int VERTICAL_PIPE_GAP = 27;
+
     final FlappyBird game;
 
     private final int HORIZONTAL_PIPE_GAP = 70;
@@ -47,7 +48,6 @@ public class Pipe {
         for (Texture texture : pipeTextures) {
             texture.dispose();
         }
-
         pipeTexture.dispose();
     }
 
@@ -57,30 +57,37 @@ public class Pipe {
         }
     }
 
-    public void pipesHandler(Bird bird, float deltaTime) {
-        // Move pipes towards player
-        for (Sprite pipe : pipes) {
-            pipe.translateX(bird.FLY_SPEED * deltaTime);
-        }
+    public void update(float gameSpeed, float deltaTime) {
+        movePipes(gameSpeed, deltaTime);
+        addPipes();
+        removePipes();
+    }
 
-        // Add new pipes
+    private void movePipes(float gameSpeed, float deltaTime) {
+        for (Sprite pipe : pipes) {
+            pipe.translateX(gameSpeed * deltaTime);
+        }
+    }
+
+    private void addPipes() {
         if (pipes.get(pipes.size() - 1).getX() < game.viewport.getWorldWidth() - HORIZONTAL_PIPE_GAP) {
             createPipes();
         }
+    }
 
-        // Remove pipes off the screen
+    private void removePipes() {
         if (pipes.get(0).getX() < -pipeTexture.getWidth()) {
             pipes.remove(0);
             pipeRectangles.remove(0);
         }
     }
 
-    public void updateCollisions(Bird bird, float deltaTime) {
+    public void updateCollisions(float gameSpeed, float deltaTime) {
         for (Rectangle scoreRectangle : scoreRectangles) {
-            scoreRectangle.setX(scoreRectangle.getX() + bird.FLY_SPEED * deltaTime);
+            scoreRectangle.setX(scoreRectangle.getX() + gameSpeed * deltaTime);
         }
         for (Rectangle pipe : pipeRectangles) {
-            pipe.setX(pipe.getX() + bird.FLY_SPEED * deltaTime);
+            pipe.setX(pipe.getX() + gameSpeed * deltaTime);
         }
     }
 

@@ -201,6 +201,10 @@ public class GameScreen implements Screen {
             if (gameOver && birdIsOnGround) {
                 resetGame();
             }
+
+            if (Gdx.input.getY() < game.viewport.getScreenHeight() / 6) {
+                debugMode = !debugMode;
+            }
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.D)) {

@@ -25,14 +25,15 @@ public class GameScreen implements Screen {
 
     final FlappyBird game;
 
-    private Bird bird;
-
     private final float GAME_SPEED = -40;
-
-    private Pipe pipe;
-    private Ground ground;
+    private final int HORIZONTAL_PIPE_GAP = 70;
 
     private float deltaTime;
+
+    private Bird bird;
+    private Ground ground;
+
+    private List<Pipe> pipes;
 
     private List<Texture> backgroundTextures;
 
@@ -40,8 +41,10 @@ public class GameScreen implements Screen {
 
     private Texture tapTexture;
     private Texture getReadyTexture;
+
     private Texture scoreTexture;
     private Texture gameOverTexture;
+
     private Texture btnPlayTexture;
     private Texture btnHighscoresTexture;
 
@@ -53,7 +56,6 @@ public class GameScreen implements Screen {
     private Integer score;
 
     private ShapeRenderer shape;
-
     private Boolean debugMode;
 
     private boolean isPlaying;
@@ -85,7 +87,6 @@ public class GameScreen implements Screen {
         pointSound = Gdx.audio.newSound(Gdx.files.internal("audio/sfx_point.wav"));
 
         shape = new ShapeRenderer();
-
         debugMode = false;
 
         resetGame();
@@ -124,15 +125,16 @@ public class GameScreen implements Screen {
     @Override
     public void dispose() {
         bird.dispose();
+        for (Pipe pipe : pipes) {
+            pipe.dispose();
+        }
+        ground.dispose();
 
-        pipe.dispose();
         for (Texture texture : backgroundTextures) {
             texture.dispose();
         }
 
         backgroundTexture.dispose();
-
-        ground.dispose();
 
         tapTexture.dispose();
         getReadyTexture.dispose();
@@ -181,14 +183,13 @@ public class GameScreen implements Screen {
     }
 
     private void input() {
-        float worldHeight = game.viewport.getWorldHeight();
         if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || Gdx.input.justTouched()) {
             if (!isPlaying) {
                 isPlaying = true;
             }
 
             if (!gameOver) {
-                if (bird.getSprite().getY() < worldHeight - 25 && bird.getSprite().getY() > 0) {
+                if (bird.getSprite().getY() < game.viewport.getWorldHeight() - 25 && bird.getSprite().getY() > 0) {
                     // birdVelocity += FLAP_FORCE; += or = ?
                     bird.flap();
                     wingSound.play();
@@ -216,7 +217,11 @@ public class GameScreen implements Screen {
 
         if (isPlaying) {
             if (!gameOver) {
-                pipe.update(GAME_SPEED, deltaTime);
+                addPipes();
+                removePipes();
+                for (Pipe pipe : pipes) {
+                    pipe.move(GAME_SPEED, deltaTime);
+                }
             }
             bird.applyPhisics(ground.getGroundRectangle(), deltaTime);
         }
@@ -251,11 +256,14 @@ public class GameScreen implements Screen {
         if (!isPlaying) {
             drawGetReady();
         }
-        pipe.draw();
+
+        for (Pipe pipe : pipes) {
+            pipe.draw();
+        }
         bird.draw();
         ground.draw();
 
-        if (isPlaying && !gameOver) {
+        if (isPlaying && !gameOver && !debugMode) {
             GlyphLayout scoreText = new GlyphLayout();
             scoreText.setText(game.font, score.toString());
 
@@ -278,8 +286,10 @@ public class GameScreen implements Screen {
 
     private void resetGame() {
         bird = new Bird(this.game);
-        pipe = new Pipe(this.game);
         ground = new Ground(this.game);
+
+        pipes = new ArrayList<>();
+        pipes.add(new Pipe(this.game));
 
         score = 0;
         isPlaying = false;
@@ -290,7 +300,9 @@ public class GameScreen implements Screen {
     }
 
     private void updateCollisions() {
-        pipe.updateCollisions(GAME_SPEED, deltaTime);
+        for (Pipe pipe : pipes) {
+            pipe.updateCollisions(GAME_SPEED, deltaTime);
+        }
         bird.updateCollision();
     }
 
@@ -302,18 +314,32 @@ public class GameScreen implements Screen {
     }
 
     private void checkCollisions() {
-        for (Rectangle pipeRectangle : pipe.getPipeRectangles()) {
-            checkCollision(pipeRectangle);
+        for (Pipe pipe : pipes) {
+            checkCollision(pipe.getTopRectangle());
+            checkCollision(pipe.getBottomRectangle());
         }
         checkCollision(ground.getGroundRectangle());
         checkScore();
     }
 
     private void checkScore() {
-        if (bird.getRectangle().overlaps(pipe.getScoreRectangles().get(0))) {
+        if (bird.getRectangle().overlaps(pipes.get(0).getScoreRectangle())) {
             score++;
-            pipe.getScoreRectangles().remove(0);
+            pipes.get(0).setScoreRectangle(new Rectangle());
             pointSound.play();
+        }
+    }
+
+    private void addPipes() {
+        if (pipes.get(pipes.size() - 1).getBottomRectangle().getX() < game.viewport.getWorldWidth()
+                - HORIZONTAL_PIPE_GAP) {
+            pipes.add(new Pipe(this.game));
+        }
+    }
+
+    private void removePipes() {
+        if (pipes.get(0).getBottomSprite().getX() < -pipes.get(0).getBottomSprite().getWidth()) {
+            pipes.remove(0);
         }
     }
 
@@ -323,42 +349,63 @@ public class GameScreen implements Screen {
             shape.begin(ShapeType.Filled);
 
             // Pipes Collisions
-            for (Rectangle rect : pipe.getPipeRectangles()) {
+            for (Pipe pipe : pipes) {
                 shape.setColor(Color.RED);
-                shape.rect(rect.getX(), rect.getY(), rect.getWidth(),
-                        rect.getHeight());
+                shape.rect(
+                        pipe.getTopRectangle().getX() * 2,
+                        pipe.getTopRectangle().getY() * 2,
+                        pipe.getTopRectangle().getWidth() * 2,
+                        pipe.getTopRectangle().getHeight() * 2);
+                shape.rect(
+                        pipe.getBottomRectangle().getX() * 2,
+                        pipe.getBottomRectangle().getY() * 2,
+                        pipe.getBottomRectangle().getWidth() * 2,
+                        pipe.getBottomRectangle().getHeight() * 2);
             }
 
             // Score area
-            for (Rectangle rect : pipe.getScoreRectangles()) {
+            for (Pipe pipe : pipes) {
                 shape.setColor(Color.GREEN);
-                shape.rect(rect.getX(), rect.getY(), rect.getWidth(),
-                        rect.getHeight());
+                shape.rect(
+                        pipe.getScoreRectangle().getX() * 2,
+                        pipe.getScoreRectangle().getY() * 2,
+                        pipe.getScoreRectangle().getWidth() * 2,
+                        pipe.getScoreRectangle().getHeight() * 2);
             }
 
             // Bird Collision
             shape.setColor(Color.YELLOW);
-            shape.rect(bird.getRectangle().getX(), bird.getRectangle().getY(), bird.getRectangle().getWidth(),
-                    bird.getRectangle().getHeight());
+            shape.rect(
+                    bird.getRectangle().getX() * 2,
+                    bird.getRectangle().getY() * 2,
+                    bird.getRectangle().getWidth() * 2,
+                    bird.getRectangle().getHeight() * 2);
 
             // Ground Collision
             shape.setColor(Color.RED);
-            shape.rect(ground.getGroundRectangle().getX(), ground.getGroundRectangle().getY(),
-                    ground.getGroundRectangle().getWidth(),
-                    ground.getGroundRectangle().getHeight());
+            shape.rect(
+                    ground.getGroundRectangle().getX() * 2,
+                    ground.getGroundRectangle().getY() * 2,
+                    ground.getGroundRectangle().getWidth() * 2,
+                    ground.getGroundRectangle().getHeight() * 2);
 
             shape.end();
 
             // Debug text
             game.batch.begin();
+            game.font.getData().setScale(0.55f);
             game.font.setColor(Color.WHITE);
-            game.font.draw(game.batch, "PIPES COLLISIONS: " + pipe.getPipeRectangles().size(), 0,
+            game.font.draw(game.batch, "COLLISIONS: " + pipes.size() * 2, 0,
                     game.viewport.getWorldHeight());
-            game.font.draw(game.batch, "SCORE AREAS: " + pipe.getScoreRectangles().size(), 0,
-                    game.viewport.getWorldHeight() - 10);
-            game.font.draw(game.batch, "TOTAL PIPES: " + pipe.getPipes().size(), 0,
-                    game.viewport.getWorldHeight() - 20);
+            game.font.draw(game.batch, "SCORE AREAS: " + pipes.size(), 0,
+                    game.viewport.getWorldHeight() - 14);
+            game.font.draw(game.batch, "TOTAL PIPES: " + pipes.size() * 2, 0,
+                    game.viewport.getWorldHeight() - 28);
+            game.font.draw(game.batch, "SCORE: " + score, 0,
+                    game.viewport.getWorldHeight() - 50);
             game.batch.end();
+        } else {
+            game.font.getData().setScale(1f);
         }
     }
 }
